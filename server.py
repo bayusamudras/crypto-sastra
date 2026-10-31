@@ -7,8 +7,9 @@ Crypto Sastra - Crypto News Intelligence
 - Hanya butuh Python 3.9+ (tanpa dependensi wajib)
 
 Jalankan:  python3 server.py   -> buka http://localhost:8000
+Mode GitHub Actions: python3 server.py --once  -> satu siklus, hasil ditulis ke DATA_DIR/*.json
 """
-import json, os, re, time, threading, hashlib, math, queue, urllib.request, urllib.parse
+import json, os, re, sys, time, threading, hashlib, math, queue, urllib.request, urllib.parse
 import xml.etree.ElementTree as ET
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from email.utils import parsedate_to_datetime
@@ -245,6 +246,9 @@ def ai_enrich(item):
         print("ai_enrich gagal:", e)
 
 ALERT_LOG = []   # timestamp alert terkirim (pembatas laju)
+ONCE = False       # True saat dijalankan sebagai siklus tunggal (GitHub Actions)
+BOOTSTRAP = False  # run pertama tanpa data sebelumnya: tidak kirim alert untuk backlog
+AI_LEFT = 5        # batas analisis AI per siklus pada mode ONCE
 
 def tg_send(text):
     """Kirim pesan HTML ke Telegram. Dipisah supaya mudah diuji/di-mock."""
@@ -286,8 +290,10 @@ def ingest(source, title, summary, url, published, cred):
     title, summary = clean(title), clean(summary)[:500]
     if not title: return
     _id = hashlib.sha1((url or title).encode()).hexdigest()[:12]
-    if _id in SEEN: return
-    SEEN.add(_id)
+    if ONCE and published < time.time() - 72 * 3600: return   # abaikan berita > 72 jam pada mode siklus
+    with LOCK:
+        if _id in SEEN: return
+        SEEN.add(_id)
     item = {"id": _id, "source": source, "title": title, "summary": summary, "url": url,
             "published": published, "first_seen": time.time(), "credibility": cred, "demo": False}
     item = analyze(item)
@@ -298,8 +304,14 @@ def ingest(source, title, summary, url, published, cred):
                      "t0": time.time(), "outcomes": {}} if sym else None
     with LOCK: NEWS[_id] = item
     push(item)
-    threading.Thread(target=maybe_alert, args=(item,), daemon=True).start()
-    threading.Thread(target=ai_enrich, args=(item,), daemon=True).start()
+    if ONCE:                                   # mode siklus: kerjakan berurutan agar selesai sebelum proses berhenti
+        global AI_LEFT
+        if not BOOTSTRAP: maybe_alert(item)
+        if ANTHROPIC_KEY and item["score"] >= 55 and AI_LEFT > 0:
+            AI_LEFT -= 1; ai_enrich(item)
+    else:
+        threading.Thread(target=maybe_alert, args=(item,), daemon=True).start()
+        threading.Thread(target=ai_enrich, args=(item,), daemon=True).start()
 
 # ---------------------------------------------------------------- pengumpul
 def parse_time(s):
@@ -456,6 +468,59 @@ def predictions():
                     "potential": it["predictions"], "affected": [r["symbol"] for r in it["ripple"]], "confidence": it["confidence"]})
     return out[:6]
 
+def stats_api():
+    return [{"event": e, "n": s["n"], "hit_rate": round(s["hits"] / s["n"], 3) if s["n"] else None,
+             "raw_hit_rate": round(s.get("raw_hits", s["hits"]) / s["n"], 3) if s["n"] else None,
+             "avg_ret_pct": round(s["sum_ret"] / s["n"], 2) if s["n"] else None,
+             "avg_alpha_pct": round(s.get("sum_alpha", s["sum_ret"]) / s["n"], 2) if s["n"] else None,
+             "weight_multiplier": event_multiplier(e), "calibrated": s["n"] >= MIN_SAMPLES} for e, s in STATS.items()]
+
+def prices_api():
+    return {s: {"usd": v[0], "chg24h": v[2] if len(v) > 2 else None} for s, v in PRICES.items()}
+
+# ---------------------------------------------------------------- mode siklus tunggal (GitHub Actions)
+def once():
+    """Satu siklus: muat data sebelumnya -> kumpulkan -> nilai -> ukur hasil -> tulis JSON statis -> selesai."""
+    global ONCE, BOOTSTRAP, STATS_FILE
+    from concurrent.futures import ThreadPoolExecutor
+    ONCE = True
+    d = os.getenv("DATA_DIR", "data"); os.makedirs(d, exist_ok=True)
+    STATS_FILE = os.path.join(d, "stats_raw.json")
+    def load(name, default):
+        try: return json.load(open(os.path.join(d, name), encoding="utf-8"))
+        except Exception: return default
+    def dump(name, obj):
+        tmp = os.path.join(d, name + ".tmp")
+        json.dump(obj, open(tmp, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+        os.replace(tmp, os.path.join(d, name))
+    STATS.clear(); STATS.update(load("stats_raw.json", {}))
+    prev = load("news.json", None)
+    BOOTSTRAP = prev is None
+    cutoff = time.time() - 72 * 3600
+    for it in (prev or {}).get("items", []):
+        if it.get("published", 0) >= cutoff: NEWS[it["id"]] = it
+    SEEN.update(NEWS.keys())
+    ALERT_LOG[:] = load("state.json", {}).get("alerts", [])
+    try: pull_prices()
+    except Exception as e: print("harga gagal:", e)
+    jobs = [(pull_rss, (n, u, c)) for n, (u, c) in RSS.items()] + [(pull_reddit, (l, sub)) for l, sub in REDDIT.items()] + [(pull_gecko_trending, ())]
+    if CRYPTOPANIC_KEY: jobs.append((pull_cryptopanic, ()))
+    if X_BEARER: jobs.append((pull_x, ()))
+    def run(job):
+        fn, a = job
+        try: fn(*a)
+        except Exception as e: print(f"[{fn.__name__}{a[:1]}] gagal: {e}")
+    with ThreadPoolExecutor(8) as ex: list(ex.map(run, jobs))
+    evaluate_outcomes()
+    items = sorted(NEWS.values(), key=lambda x: -x["first_seen"])[:300]
+    now = time.time()
+    dump("news.json", {"items": items, "uptime": 0, "generated_at": int(now), "mode": "static",
+                       "sources": len(RSS) + len(REDDIT) + bool(CRYPTOPANIC_KEY) + bool(X_BEARER) + 1})
+    dump("top5.json", top5()); dump("predictions.json", predictions()); dump("stats.json", stats_api()); dump("prices.json", prices_api())
+    dump("state.json", {"alerts": [t for t in ALERT_LOG if now - t < 3600], "last_run": int(now)})
+    save_stats()
+    print(f"siklus selesai: {len(items)} berita, {len(PRICES)} harga, bootstrap={BOOTSTRAP}, alert_terkirim={len(ALERT_LOG)}")
+
 # ---------------------------------------------------------------- HTTP
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
@@ -469,14 +534,8 @@ class H(BaseHTTPRequestHandler):
             with LOCK: items = sorted(NEWS.values(), key=lambda x: -x["first_seen"])[:200]
             self._json({"items": items, "uptime": int(time.time() - STARTED), "sources": len(RSS) + len(REDDIT) + bool(CRYPTOPANIC_KEY) + bool(X_BEARER) + 1})
         elif path == "/health": self._json({"ok": True, "items": len(NEWS), "uptime": int(time.time() - STARTED)})
-        elif path == "/api/prices":
-            self._json({s: {"usd": v[0], "chg24h": v[2] if len(v) > 2 else None} for s, v in PRICES.items()})
-        elif path == "/api/stats":
-            self._json([{"event": e, "n": s["n"], "hit_rate": round(s["hits"] / s["n"], 3) if s["n"] else None,
-                         "raw_hit_rate": round(s.get("raw_hits", s["hits"]) / s["n"], 3) if s["n"] else None,
-                         "avg_ret_pct": round(s["sum_ret"] / s["n"], 2) if s["n"] else None,
-                         "avg_alpha_pct": round(s.get("sum_alpha", s["sum_ret"]) / s["n"], 2) if s["n"] else None,
-                         "weight_multiplier": event_multiplier(e), "calibrated": s["n"] >= MIN_SAMPLES} for e, s in STATS.items()])
+        elif path == "/api/prices": self._json(prices_api())
+        elif path == "/api/stats": self._json(stats_api())
         elif path == "/api/top5": self._json(top5())
         elif path == "/api/predictions": self._json(predictions())
         elif path == "/events":
@@ -498,6 +557,8 @@ class H(BaseHTTPRequestHandler):
             self.end_headers(); self.wfile.write(b)
 
 if __name__ == "__main__":
+    if "--once" in sys.argv:
+        once(); sys.exit(0)
     start_collectors()
     time.sleep(8)
     if not NEWS:

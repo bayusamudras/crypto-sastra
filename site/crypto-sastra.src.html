@@ -267,7 +267,7 @@ footer p{margin:0;max-width:78ch}
     <h2>Dari berita mentah ke keputusan, dengan catatan hasilnya</h2>
     <p class="lead">Setiap berita melewati empat tahap yang sama. Tahap terakhir yang membedakan: sistem membandingkan prediksinya dengan harga sungguhan dan memperbaiki skornya sendiri.</p>
     <div class="steps">
-      <div><h3>Kumpulkan</h3><p>RSS media dan exchange, pengumuman Binance dan Coinbase, rilis SEC, Reddit, CoinGecko Trending, serta X dan CryptoPanic bila kuncinya dipasang. Diperiksa tiap 20 detik.</p></div>
+      <div><h3>Kumpulkan</h3><p>RSS media dan exchange, pengumuman Binance dan Coinbase, rilis SEC, Reddit, CoinGecko Trending, serta X dan CryptoPanic bila kuncinya dipasang. Diperiksa tiap 20 detik di server sendiri, atau tiap sekitar 5 menit di GitHub.</p></div>
       <div><h3>Nilai</h3><p>Jenis kejadian, kredibilitas sumber, ukuran proyek, kata kunci urgensi, dan usia berita digabung menjadi skor 0 sampai 100 beserta alasannya.</p></div>
       <div><h3>Terapkan</h3><p>Tiap berita membawa langkah yang disarankan, jendela exit, proyek lain yang ikut terdampak, dan kejadian yang biasanya menyusul.</p></div>
       <div><h3>Ukur</h3><p>Harga dicatat saat berita muncul, lalu dicek 1, 6, dan 24 jam kemudian terhadap BTC. Hasilnya mengubah bobot tiap jenis event.</p></div>
@@ -294,7 +294,7 @@ footer p{margin:0;max-width:78ch}
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-const S={items:{},prices:{},demo:false,dir:'',min:0,sort:'new',q:'',onlyWatch:false,top:[],pred:[],stats:[]};
+const S={items:{},prices:{},demo:false,static:false,genAt:0,dir:'',min:0,sort:'new',q:'',onlyWatch:false,top:[],pred:[],stats:[]};
 const watch=new Set(store.get('cs.watch',[]));
 const openIds=new Set();
 let freshId=null;
@@ -475,7 +475,12 @@ function copy(txt){
 }
 
 /* ---------- data live ---------- */
-const getJSON=u=>fetch(u,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+const STATIC_MAP={'/api/news':'data/news.json','/api/top5':'data/top5.json','/api/predictions':'data/predictions.json','/api/stats':'data/stats.json','/api/prices':'data/prices.json'};
+const fj=u=>fetch(u,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+/* Server live: /api/*. Hosting statis (GitHub Pages): data/*.json yang diperbarui GitHub Actions. */
+const getJSON=async u=>{
+  if(!S.static){try{return await fj(u)}catch(e){}}
+  const r=await fj(STATIC_MAP[u]);S.static=true;return r};
 async function loadSide(){
   try{
     const [t,p,st,pr]=await Promise.all([getJSON('/api/top5'),getJSON('/api/predictions'),getJSON('/api/stats'),getJSON('/api/prices')]);
@@ -489,10 +494,19 @@ function pushItem(i,isNew){
   renderStats();renderFeed();
   if(isNew&&i.score>=70){if(sound)beep();if(notif){try{new Notification(`[${i.score}] ${i.direction.toUpperCase()} ${i.projects.join(', ')}`,{body:i.title})}catch(e){}}}
 }
+function footTxt(r){
+  $('#foot').textContent=S.static?(r.sources+' sumber · diperbarui '+(r.generated_at?ago(r.generated_at):'-')):(r.sources+' sumber · aktif '+Math.round((r.uptime||0)/60)+' mnt')}
+async function refreshStatic(){
+  try{
+    const r=await fj(STATIC_MAP['/api/news']);
+    (r.items||[]).forEach(i=>{const isNew=!S.items[i.id];S.items[i.id]=i;if(isNew&&S.genAt&&i.score>=70){if(sound)beep();if(notif){try{new Notification(`[${i.score}] ${i.direction.toUpperCase()} ${i.projects.join(', ')}`,{body:i.title})}catch(e){}}}});
+    S.genAt=r.generated_at||S.genAt;footTxt(r);renderStats();renderFeed();await loadSide();
+  }catch(e){}
+}
 let sideT;const sideSoon=()=>{clearTimeout(sideT);sideT=setTimeout(loadSide,1500)};
 async function init(){
   let live=false;
-  try{const r=await getJSON('/api/news');(r.items||[]).forEach(i=>S.items[i.id]=i);live=true;$('#foot').textContent=r.sources+' sumber · aktif '+Math.round(r.uptime/60)+' mnt'}catch(e){}
+  try{const r=await getJSON('/api/news');(r.items||[]).forEach(i=>S.items[i.id]=i);live=true;S.genAt=r.generated_at||0;footTxt(r)}catch(e){}
   if(live&&Object.values(S.items).length&&Object.values(S.items).every(i=>i.demo))S.demo=true;
   if(!live){S.demo=true;S.items=demoItems();S.stats=DEMO_STATS;
     S.prices={PEPE:{usd:103.4},BTC:{usd:102.1},BNB:{usd:101.1}};
@@ -500,6 +514,9 @@ async function init(){
     setLive('demo','pratinjau');$('#banner').hidden=false;$('#foot').textContent='mode pratinjau';renderAll();return}
   if(S.demo){$('#banner').hidden=false}
   renderAll();await loadSide();
+  if(S.static){
+    setLive(S.demo?'demo':'on','data diperbarui berkala');
+    setInterval(refreshStatic,60000);return}
   try{
     const es=new EventSource('/events');
     es.onopen=()=>setLive(S.demo?'demo':'on',S.demo?'live · data contoh':'live');

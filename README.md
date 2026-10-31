@@ -6,7 +6,8 @@ berdampak, lalu **mengukur akurasi sinyalnya terhadap harga (vs BTC)** dan mengk
 
 ## Struktur
 ```
-server.py                  backend: pengumpul berita, analisis, harga, kalibrasi, alert Telegram, API + SSE
+server.py                  backend: pengumpul berita, analisis, harga, kalibrasi, alert Telegram, API + SSE; --once = satu siklus untuk Actions
+.github/workflows/collect.yml  jadwal GitHub Actions (cron 5 menit) yang menerbitkan ke gh-pages
 static/index.html          website (hasil build, dilayani server)
 site/crypto-sastra.src.html sumber website (edit di sini, lalu jalankan: python3 build.py)
 Dockerfile, docker-compose.yml, render.yaml, Procfile, .env.example   berkas deploy
@@ -19,7 +20,27 @@ python3 server.py            # Python 3.9+, tanpa dependensi
 ```
 Tanpa akses internet ke sumber, server memuat data contoh (diberi label "Contoh"). Uji harga offline: `SIM_PRICES=1 python3 server.py`.
 
-## Deploy jadi website publik
+## Hosting gratis dari GitHub (tanpa server, tanpa domain berbayar)
+Website di **GitHub Pages**, pengumpul berita di **GitHub Actions** (`.github/workflows/collect.yml`, jalan tiap ~5 menit).
+Alamatnya `https://<username>.github.io/crypto-sastra/`.
+
+1. **Jadikan repo Public** (Settings → General → Danger Zone → Change visibility). Pages di akun gratis hanya untuk repo publik,
+   dan repo publik mendapat menit Actions tanpa batas. Aman karena tidak ada kunci di kode; kunci disimpan di Secrets.
+2. **Isi Secrets** (Settings → Secrets and variables → Actions → New repository secret), semua opsional:
+   `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ANTHROPIC_API_KEY`, `X_BEARER_TOKEN`, `CRYPTOPANIC_KEY`.
+3. **Jalankan pertama kali**: tab Actions → "Kumpulkan berita" → Run workflow. Ini membuat branch `gh-pages`.
+4. **Aktifkan Pages**: Settings → Pages → Source: *Deploy from a branch* → Branch `gh-pages` / `/ (root)` → Save.
+
+Cara kerjanya: tiap siklus memuat data sebelumnya dari `gh-pages`, mengumpulkan berita, mengukur hasil harga, mengirim alert, lalu
+menimpa `gh-pages` dengan satu commit (riwayat tidak membengkak). Run pertama tidak mengirim alert agar backlog tidak membanjiri Telegram.
+
+Batasan mode ini: bukan realtime. Jadwal cron GitHub minimal 5 menit dan sering tertunda beberapa menit saat ramai, jadi waktu deteksi
+lebih lambat daripada server sendiri. Workflow terjadwal bisa dinonaktifkan GitHub bila repo tidak ada aktivitas lama (cek tab Actions
+dan aktifkan kembali). Untuk deteksi detik demi detik, jalankan `server.py` di VPS.
+
+Uji satu siklus di komputer sendiri: `DATA_DIR=out/data python3 server.py --once`
+
+## Deploy dengan server sendiri (realtime)
 Server ini harus berjalan terus (ia menarik berita dan mengukur harga setiap beberapa detik), jadi pilih hosting yang mendukung proses long-running, bukan hosting statis.
 
 **Opsi A, Render / Railway / Fly.io (paling mudah)**
