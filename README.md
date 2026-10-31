@@ -16,6 +16,16 @@ site/crypto-sastra.src.html sumber website (edit di sini, lalu jalankan: python3
 Dockerfile, docker-compose.yml, render.yaml, Procfile, .env.example   berkas deploy
 ```
 
+## Hunter (konsep utama)
+`hunter.py` memburu altcoin kecil yang undervalue dan masih sepi dibahas.
+1. **Universe**: CoinGecko, market cap $15 jt sampai $400 jt, volume minimal $300 rb (atur lewat `HUNT_MC_MIN`, `HUNT_MC_MAX`, `HUNT_VOL_MIN`).
+2. **Fundamental**: DefiLlama (TVL, pendapatan 30 hari) menghitung MC/pendapatan tahunan dan MC/TVL; FDV/MC; diskon dari ATH; likuiditas; fase harga.
+3. **Radar sosial**: Reddit (top mingguan 8 subreddit, post "DD/analysis" berbobot lebih), X bila `X_BEARER_TOKEN` dipasang (isi `X_ANALYSTS=akun1,akun2` dengan analis yang Anda percaya; tweet mereka berbobot 2x), dan CoinGecko Trending sebagai penanda sudah viral.
+4. **Skor** 0-100 = valuasi 30 + suplai 15 + diskon ATH 10 + likuiditas 10 + fase 10 + senyap 25, plus/minus insight analis (maks 8). Checklist tesis Kalimasada menandai tiap kriteria lolos, gagal, atau tidak diketahui.
+5. `hunt_seed.json` memuat riset manual dan catatan analis bertanggal. Tambahkan sendiri. Isi `unlocks.json` agar cek unlock 90 hari terisi.
+
+Reddit sering menolak IP datacenter (termasuk GitHub Actions). Bila gagal, Hunter menandai sumber sosial tidak terjangkau dan menilai "senyap" netral, bukan menebak. Hasil di GitHub: `data/hunt.json`, diperbarui tiap sekitar 55 menit.
+
 ## Jalankan lokal
 ```bash
 python3 server.py            # Python 3.9+, tanpa dependensi
@@ -95,7 +105,7 @@ Lalu pasang Caddy atau Nginx sebagai reverse proxy ke port 8000 agar dapat HTTPS
 Kunci dan token bersifat rahasia: simpan di environment/secret hosting, jangan di-commit.
 
 ## Endpoint
-`/` website · `/api/scan?symbol=SOL` · `/api/scan/index` · `/api/news` · `/api/top5` · `/api/predictions` · `/api/prices` · `/api/stats` · `/events` (SSE) · `/health`
+`/` website · `/api/scan?symbol=SOL` · `/api/scan/index` · `/api/news` · `/api/top5` · `/api/predictions` · `/api/prices` · `/api/stats` · `/api/hunt` · `/api/scan/index` · `/events` (SSE) · `/health`
 
 ## Cara skor dihitung
 `skor = bobot_event × kredibilitas × skala_proyek × urgensi × kesegaran`. Harga dicatat saat berita muncul dan diukur 1/6/24 jam

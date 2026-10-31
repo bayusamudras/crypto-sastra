@@ -8,7 +8,7 @@
 <body>
 <title>Crypto Sastra</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Crypto Sastra: radar berita crypto realtime dengan skor, dampak, aksi, estimasi exit, dan pengukuran akurasi sinyal.">
+<meta name="description" content="Crypto Sastra: pemburu altcoin kecil yang undervalue dan masih sepi dibahas, plus radar berita crypto, scan institusional, dan pengukuran akurasi sinyal.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233A4DE0'/%3E%3Cpath d='M16 5l8 11-8 11-8-11z' fill='%23fff'/%3E%3Cpath d='M16 12v9' stroke='%233A4DE0' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -217,6 +217,48 @@ td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:ta
 .gaps{margin-top:14px;padding:12px 16px;border-radius:var(--r);background:var(--warn-soft);color:var(--warn);font-size:13.5px}
 .gaps ul{margin:6px 0 0;padding-left:18px}
 .scanwait{padding:36px 16px;text-align:center;color:var(--mut);border:1px dashed var(--line);border-radius:var(--r)}
+
+/* Hunter */
+.hero h2{font-family:var(--f-display);font-weight:500;font-size:clamp(24px,3.2vw,34px);line-height:1.1;letter-spacing:-.02em;margin:0 0 10px;text-wrap:balance}
+.radarhead{border-top:1px solid var(--line);margin-top:34px;padding-top:34px}
+.hunter{padding-block:6px 28px}
+.hc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:10px;min-width:0}
+.hc>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:34px minmax(0,1.5fr) repeat(3,minmax(0,.8fr)) 96px 22px;gap:14px;align-items:center;padding:14px 16px}
+.hc>summary::-webkit-details-marker{display:none}
+.hc>summary::before{content:none}
+.hc>summary{color:var(--fg);font-weight:400;font-size:14px;padding:14px 16px}
+.hc>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--r)}
+.hc .rk{font:italic 500 24px var(--f-display);color:var(--mut)}
+.hc .nm b{font-size:16px}.hc .nm small{display:block;color:var(--mut);font-size:12.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hc .mt span{display:block;font-size:11px;color:var(--mut);letter-spacing:.04em;text-transform:uppercase}
+.hc .mt b{font:600 14px var(--f-mono);font-variant-numeric:tabular-nums}
+.hc .sg{font:600 26px/1 var(--f-mono);text-align:right;letter-spacing:-.03em}.hc .sg small{display:block;font:500 11px var(--f-body);color:var(--mut);letter-spacing:0;margin-top:3px}
+.hc .chev{width:18px;height:18px;stroke:var(--mut);fill:none;stroke-width:2;transition:transform .15s}
+.hc[open] .chev{transform:rotate(180deg)}
+.dots{display:flex;gap:3px;margin-top:6px}.dots i{width:9px;height:9px;border-radius:3px;background:var(--surface2);border:1px solid var(--line)}
+.dots i.pass{background:var(--up);border-color:var(--up)}.dots i.fail{background:var(--dn);border-color:var(--dn)}
+.pill.prioritas{background:var(--up-soft);color:var(--up)}.pill.pantau{background:var(--warn-soft);color:var(--warn)}.pill.lemah{background:var(--surface2);color:var(--mut)}
+.pill.viral{background:var(--dn-soft);color:var(--dn)}.pill.quiet{background:var(--accent-soft);color:var(--accent)}
+.hbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:4px 16px 16px;border-top:1px solid var(--line);padding-top:14px}
+.hbody h4{margin:0 0 8px;font:600 11.5px var(--f-body);letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}
+.hbody ul{margin:4px 0;padding-left:18px;font-size:14px}.hbody li{margin:3px 0}
+.pb{display:grid;grid-template-columns:120px minmax(0,1fr) 54px;gap:8px;align-items:center;font-size:13px;margin:5px 0}
+.pb i{display:block;height:6px;border-radius:4px;background:var(--surface2);overflow:hidden}.pb i u{display:block;height:100%;background:var(--accent)}
+.pb b{font:600 12.5px var(--f-mono);text-align:right}
+.pb em{grid-column:2/-1;font-style:normal;color:var(--mut);font-size:12px;margin-top:-3px}
+.ck{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;font-size:13.5px;margin:5px 0}
+.ck b{font:700 13px var(--f-mono)}.ck.pass b{color:var(--up)}.ck.fail b{color:var(--dn)}.ck.unknown b{color:var(--mut)}
+.ck small{display:block;color:var(--mut);font-size:12px}
+.hbody .full{grid-column:1/-1}
+.src a{word-break:break-word}
+.hgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}
+.hgrid .panel{margin:0}
+.mnote{border-top:1px solid var(--line);padding:10px 0;font-size:14px}.mnote:first-of-type{border-top:0}
+.mnote p{margin:3px 0;color:var(--mut)}
+.btnl{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:6px 12px;font:600 13px var(--f-body);cursor:pointer;text-decoration:none;display:inline-block}
+.btnl:hover{border-color:var(--accent);color:var(--accent)}
+@media(max-width:1000px){.hgrid{grid-template-columns:1fr}}
+@media(max-width:760px){.hc>summary{grid-template-columns:28px minmax(0,1fr) 78px 20px}.hc>summary .mt{display:none}.hbody{grid-template-columns:1fr}.pb{grid-template-columns:96px minmax(0,1fr) 48px}}
 /* Cara kerja */
 .how{padding-block:44px;border-top:1px solid var(--line)}
 .how h2{font-family:var(--f-display);font-weight:500;font-size:clamp(26px,3.4vw,36px);letter-spacing:-.02em;margin:0 0 8px;text-wrap:balance}
@@ -244,12 +286,12 @@ footer p{margin:0;max-width:78ch}
 
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#radar" aria-label="Crypto Sastra">
+    <a class="brand" href="#hunter" aria-label="Crypto Sastra">
       <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M16 5l8 11-8 11-8-11z" fill="var(--on-accent)"/><path d="M16 12v9" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg>
       <span class="wordmark">Crypto <em>Sastra</em></span>
     </a>
     <nav class="nav" aria-label="Navigasi">
-      <a href="#radar">Radar</a><a href="#top5">Top 5</a><a href="#akurasi">Akurasi</a><a href="#scan">Scan</a><a href="#cara-kerja">Cara kerja</a>
+      <a href="#hunter">Hunter</a><a href="#radar-top">Radar</a><a href="#top5">Top 5</a><a href="#akurasi">Akurasi</a><a href="#scan">Scan</a><a href="#cara-kerja">Cara kerja</a>
     </nav>
     <div class="sp"></div>
     <span class="live" id="live"><i></i><span id="liveTxt">menghubungkan…</span></span>
@@ -260,9 +302,37 @@ footer p{margin:0;max-width:78ch}
 </header>
 <div class="banner" id="banner" hidden><div class="wrap">Mode pratinjau: semua berita di bawah adalah data contoh. Jalankan server Crypto Sastra untuk berita live dan harga nyata.</div></div>
 
-<section class="wrap hero">
+<section class="wrap hero" aria-label="Hunter">
   <div>
-    <h1>Baca beritanya lebih dulu. <em>Ukur hasilnya</em> sesudahnya.</h1>
+    <h1>Temukan altcoin <em>undervalue</em> sebelum ramai dibahas.</h1>
+    <p>Hunter menyaring ratusan altcoin kecil, menghitung seberapa murah valuasinya terhadap pendapatan dan TVL, lalu mengukur seberapa sepi pembahasannya di Reddit, X, dan CoinGecko Trending. Yang murah dan masih senyap naik ke atas.</p>
+  </div>
+  <div class="stats" id="hstats" aria-live="polite"></div>
+</section>
+
+<section class="wrap hunter" id="hunter" aria-label="Hasil Hunter">
+  <div class="bar">
+    <div class="seg" role="group" aria-label="Tingkat">
+      <button data-tier="" aria-pressed="true">Semua</button>
+      <button data-tier="prioritas" aria-pressed="false">Prioritas riset</button>
+      <button data-tier="pantau" aria-pressed="false">Pantau</button>
+    </div>
+    <label class="sr" for="hSort">Urutan</label>
+    <select class="field" id="hSort"><option value="score">Skor tertinggi</option><option value="mc">Market cap terkecil</option><option value="ps">Termurah vs pendapatan</option><option value="quiet">Paling senyap</option></select>
+    <label class="chk"><input type="checkbox" id="hQuiet" checked> Sembunyikan yang sudah viral</label>
+    <span class="count" id="hMeta"></span>
+  </div>
+  <div id="hList"><div class="scanwait">Memuat hasil Hunter…</div></div>
+  <div class="hgrid">
+    <section class="panel" id="hManual"></section>
+    <section class="panel" id="hAnalyst"></section>
+    <section class="panel" id="hSrc"></section>
+  </div>
+</section>
+
+<section class="wrap hero radarhead" id="radar-top">
+  <div>
+    <h2>Baca beritanya lebih dulu. <em>Ukur hasilnya</em> sesudahnya.</h2>
     <p>Crypto Sastra mengumpulkan berita dari exchange, media, regulator, dan komunitas, memberi skor dampak, lalu mencatat seberapa sering sinyalnya benar terhadap harga.</p>
   </div>
   <div class="stats" id="stats" aria-live="polite"></div>
@@ -325,6 +395,7 @@ footer p{margin:0;max-width:78ch}
       <div><h3>Terapkan</h3><p>Tiap berita membawa langkah yang disarankan, jendela exit, proyek lain yang ikut terdampak, dan kejadian yang biasanya menyusul.</p></div>
       <div><h3>Ukur</h3><p>Harga dicatat saat berita muncul, lalu dicek 1, 6, dan 24 jam kemudian terhadap BTC. Hasilnya mengubah bobot tiap jenis event.</p></div>
     </div>
+    <div class="formula">Hunter: skor = valuasi 30 + suplai 15 + diskon dari ATH 10 + likuiditas 10 + fase harga 10 + senyap 25 ± insight analis 8<br>senyap = 25 × (1 − bobot_buzz / 10) · nol bila sudah trending di CoinGecko</div>
     <div class="formula">skor = bobot_event × kredibilitas × skala_proyek × urgensi × kesegaran<br>alpha = return_koin − return_BTC (periode sama)   ·   sinyal benar bila alpha searah prediksi</div>
     <div class="cols">
       <div><h3>Mengejar yang pertama</h3><ul><li>Kecepatan ditentukan sumber data dan latensi jaringan</li><li>Setiap kartu menampilkan berapa menit setelah publikasi berita terdeteksi</li><li>Tambah X API, Telegram resmi, dan data on-chain untuk lebih awal</li></ul></div>
@@ -579,6 +650,73 @@ function openScan(sym){
 }
 $('#scanSel').onchange=e=>loadScan(e.target.value);
 
+
+/* ---------- Hunter ---------- */
+/*DEMO_HUNT_START*/const DEMO_HUNT={"generated_at":1793457990,"mode":"live","universe":6,"filtered":6,"filters":{"mc_min":15000000.0,"mc_max":400000000.0,"vol_min":300000.0},"sources":{"coingecko":true,"defillama":true,"reddit":{"ok":1,"fail":0},"x":{"ok":0,"fail":0,"off":true},"trending":0,"posts":6,"tweets":0},"candidates":[{"id":"contoh-c","symbol":"CNTC","name":"Contoh Oracle","rank":300,"price":1.0,"mc":48000000.0,"fdv":50400000.0,"vol":1680000.0000000002,"chg7":-2,"chg30":4,"ath_dd":0.85,"tvl":90000000.0,"category":"Oracle","chains":["Ethereum"],"rev30":550000.0,"fees30":550000.0,"ps":7.2727272727272725,"mc_tvl":0.5333333333333333,"fdv_mc":1.05,"vol_mc":0.035,"score":94,"bonus":0,"parts":{"valuasi":{"pts":24,"max":30,"note":"MC/pendapatan tahunan 7.3x"},"suplai":{"pts":15,"max":15,"note":"FDV/MC 1.05"},"drawdown":{"pts":10,"max":10,"note":"85% di bawah ATH"},"likuiditas":{"pts":10,"max":10,"note":"volume/MC 3.5%"},"fase":{"pts":10,"max":10,"note":"30h +4%, 7h -2%"},"senyap":{"pts":25,"max":25,"note":"bobot buzz 0.0 (ambang ramai 10)"}},"checklist":[{"label":"Kecil (market cap < $400 jt)","status":"pass","detail":"MC $48 jt"},{"label":"FDV/MC ≤ 1,5","status":"pass","detail":"FDV/MC 1.05"},{"label":"Tanpa unlock besar dalam 90 hari","status":"unknown","detail":"isi unlocks.json untuk memastikan"},{"label":"Pendapatan nyata","status":"pass","detail":"$0.55 jt / 30 hari"},{"label":"Valuasi murah (MC ≤ 12x pendapatan tahunan atau ≤ 0,4x TVL)","status":"pass","detail":"MC/pendapatan tahunan 7.3x"},{"label":"Belum viral","status":"pass","detail":"bobot buzz 0.0 (ambang ramai 10)"},{"label":"Fase 1-2 (belum euforia)","status":"pass","detail":"30h +4%, 7h -2%"},{"label":"Backer Tier-1 ≥ 3","status":"unknown","detail":"data investor perlu verifikasi manual"}],"pass":6,"known":6,"total":8,"tier":"prioritas","viral":false,"notes":["Valuasi murah terhadap pendapatan protokol (MC 7.3x pendapatan tahunan)"],"risks":[],"buzz":{"reddit":0,"x":0,"analyst":0,"weight":0,"sent":null,"top":[]},"manual":null,"links":{"coingecko":"https://www.coingecko.com/en/coins/contoh-c","defillama":"https://defillama.com/protocol/contoh-c"}},{"id":"contoh-a","symbol":"CNTA","name":"Contoh Lending","rank":300,"price":1.0,"mc":96000000.0,"fdv":107520000.00000001,"vol":5760000.0,"chg7":1.5,"chg30":-6,"ath_dd":0.78,"tvl":640000000.0,"category":"Lending","chains":["Ethereum","Base"],"rev30":1400000.0,"fees30":1400000.0,"ps":5.714285714285714,"mc_tvl":0.15,"fdv_mc":1.12,"vol_mc":0.06,"score":85,"bonus":0,"parts":{"valuasi":{"pts":24,"max":30,"note":"MC/pendapatan tahunan 5.7x"},"suplai":{"pts":15,"max":15,"note":"FDV/MC 1.12"},"drawdown":{"pts":10,"max":10,"note":"78% di bawah ATH"},"likuiditas":{"pts":10,"max":10,"note":"volume/MC 6.0%"},"fase":{"pts":10,"max":10,"note":"30h -6%, 7h +2%"},"senyap":{"pts":16,"max":25,"note":"bobot buzz 3.4 (ambang ramai 10)"}},"checklist":[{"label":"Kecil (market cap < $400 jt)","status":"pass","detail":"MC $96 jt"},{"label":"FDV/MC ≤ 1,5","status":"pass","detail":"FDV/MC 1.12"},{"label":"Tanpa unlock besar dalam 90 hari","status":"unknown","detail":"isi unlocks.json untuk memastikan"},{"label":"Pendapatan nyata","status":"pass","detail":"$1.40 jt / 30 hari"},{"label":"Valuasi murah (MC ≤ 12x pendapatan tahunan atau ≤ 0,4x TVL)","status":"pass","detail":"MC/pendapatan tahunan 5.7x"},{"label":"Belum viral","status":"pass","detail":"bobot buzz 3.4 (ambang ramai 10)"},{"label":"Fase 1-2 (belum euforia)","status":"pass","detail":"30h -6%, 7h +2%"},{"label":"Backer Tier-1 ≥ 3","status":"unknown","detail":"data investor perlu verifikasi manual"}],"pass":6,"known":6,"total":8,"tier":"prioritas","viral":false,"notes":["Valuasi murah terhadap pendapatan protokol (MC 5.7x pendapatan tahunan)"],"risks":[],"buzz":{"reddit":1,"x":0,"analyst":0,"weight":3.41,"sent":0.8,"top":[{"src":"r/defi","title":"DD: Contoh Lending is undervalued, revenue and buyback","url":"https://example.invalid/dd","score":12}]},"manual":null,"links":{"coingecko":"https://www.coingecko.com/en/coins/contoh-a","defillama":"https://defillama.com/protocol/contoh-a"}},{"id":"contoh-f","symbol":"CNTF","name":"Contoh RWA","rank":300,"price":1.0,"mc":150000000.0,"fdv":195000000.0,"vol":7500000.0,"chg7":3,"chg30":21,"ath_dd":0.55,"tvl":260000000.0,"category":"RWA","chains":["Ethereum"],"rev30":800000.0,"fees30":800000.0,"ps":15.625,"mc_tvl":0.5769230769230769,"fdv_mc":1.3,"vol_mc":0.05,"score":83,"bonus":0,"parts":{"valuasi":{"pts":16,"max":30,"note":"MC/pendapatan tahunan 15.6x"},"suplai":{"pts":12,"max":15,"note":"FDV/MC 1.30"},"drawdown":{"pts":10,"max":10,"note":"55% di bawah ATH"},"likuiditas":{"pts":10,"max":10,"note":"volume/MC 5.0%"},"fase":{"pts":10,"max":10,"note":"30h +21%, 7h +3%"},"senyap":{"pts":25,"max":25,"note":"bobot buzz 0.0 (ambang ramai 10)"}},"checklist":[{"label":"Kecil (market cap < $400 jt)","status":"pass","detail":"MC $150 jt"},{"label":"FDV/MC ≤ 1,5","status":"pass","detail":"FDV/MC 1.30"},{"label":"Tanpa unlock besar dalam 90 hari","status":"unknown","detail":"isi unlocks.json untuk memastikan"},{"label":"Pendapatan nyata","status":"pass","detail":"$0.80 jt / 30 hari"},{"label":"Valuasi murah (MC ≤ 12x pendapatan tahunan atau ≤ 0,4x TVL)","status":"fail","detail":"MC/pendapatan tahunan 15.6x"},{"label":"Belum viral","status":"pass","detail":"bobot buzz 0.0 (ambang ramai 10)"},{"label":"Fase 1-2 (belum euforia)","status":"pass","detail":"30h +21%, 7h +3%"},{"label":"Backer Tier-1 ≥ 3","status":"unknown","detail":"data investor perlu verifikasi manual"}],"pass":5,"known":6,"total":8,"tier":"prioritas","viral":false,"notes":[],"risks":[],"buzz":{"reddit":0,"x":0,"analyst":0,"weight":0,"sent":null,"top":[]},"manual":null,"links":{"coingecko":"https://www.coingecko.com/en/coins/contoh-f","defillama":"https://defillama.com/protocol/contoh-f"}},{"id":"contoh-b","symbol":"CNTB","name":"Contoh Perp","rank":300,"price":1.0,"mc":210000000.0,"fdv":399000000.0,"vol":18900000.0,"chg7":4,"chg30":12,"ath_dd":0.66,"tvl":300000000.0,"category":"Derivatives","chains":["Arbitrum"],"rev30":1100000.0,"fees30":1100000.0,"ps":15.909090909090908,"mc_tvl":0.7,"fdv_mc":1.9,"vol_mc":0.09,"score":78,"bonus":0,"parts":{"valuasi":{"pts":16,"max":30,"note":"MC/pendapatan tahunan 15.9x"},"suplai":{"pts":7,"max":15,"note":"FDV/MC 1.90"},"drawdown":{"pts":10,"max":10,"note":"66% di bawah ATH"},"likuiditas":{"pts":10,"max":10,"note":"volume/MC 9.0%"},"fase":{"pts":10,"max":10,"note":"30h +12%, 7h +4%"},"senyap":{"pts":25,"max":25,"note":"bobot buzz 0.0 (ambang ramai 10)"}},"checklist":[{"label":"Kecil (market cap < $400 jt)","status":"pass","detail":"MC $210 jt"},{"label":"FDV/MC ≤ 1,5","status":"fail","detail":"FDV/MC 1.90"},{"label":"Tanpa unlock besar dalam 90 hari","status":"unknown","detail":"isi unlocks.json untuk memastikan"},{"label":"Pendapatan nyata","status":"pass","detail":"$1.10 jt / 30 hari"},{"label":"Valuasi murah (MC ≤ 12x pendapatan tahunan atau ≤ 0,4x TVL)","status":"fail","detail":"MC/pendapatan tahunan 15.9x"},{"label":"Belum viral","status":"pass","detail":"bobot buzz 0.0 (ambang ramai 10)"},{"label":"Fase 1-2 (belum euforia)","status":"pass","detail":"30h +12%, 7h +4%"},{"label":"Backer Tier-1 ≥ 3","status":"unknown","detail":"data investor perlu verifikasi manual"}],"pass":4,"known":6,"total":8,"tier":"pantau","viral":false,"notes":[],"risks":[],"buzz":{"reddit":0,"x":0,"analyst":0,"weight":0,"sent":null,"top":[]},"manual":null,"links":{"coingecko":"https://www.coingecko.com/en/coins/contoh-b","defillama":"https://defillama.com/protocol/contoh-b"}},{"id":"contoh-e","symbol":"CNTE","name":"Contoh Bridge","rank":300,"price":1.0,"mc":33000000.0,"fdv":112200000.0,"vol":660000.0,"chg7":-4,"chg30":-18,"ath_dd":0.93,"tvl":20000000.0,"category":"Bridge","chains":["Ethereum"],"rev30":20000.0,"fees30":20000.0,"ps":137.5,"mc_tvl":1.65,"fdv_mc":3.4,"vol_mc":0.02,"score":51,"bonus":0,"parts":{"valuasi":{"pts":2,"max":30,"note":"MC/pendapatan tahunan 137.5x"},"suplai":{"pts":0,"max":15,"note":"FDV/MC 3.40"},"drawdown":{"pts":4,"max":10,"note":"93% di bawah ATH"},"likuiditas":{"pts":10,"max":10,"note":"volume/MC 2.0%"},"fase":{"pts":10,"max":10,"note":"30h -18%, 7h -4%"},"senyap":{"pts":25,"max":25,"note":"bobot buzz 0.0 (ambang ramai 10)"}},"checklist":[{"label":"Kecil (market cap < $400 jt)","status":"pass","detail":"MC $33 jt"},{"label":"FDV/MC ≤ 1,5","status":"fail","detail":"FDV/MC 3.40"},{"label":"Tanpa unlock besar dalam 90 hari","status":"unknown","detail":"isi unlocks.json untuk memastikan"},{"label":"Pendapatan nyata","status":"pass","detail":"$0.02 jt / 30 hari"},{"label":"Valuasi murah (MC ≤ 12x pendapatan tahunan atau ≤ 0,4x TVL)","status":"fail","detail":"MC/pendapatan tahunan 137.5x"},{"label":"Belum viral","status":"pass","detail":"bobot buzz 0.0 (ambang ramai 10)"},{"label":"Fase 1-2 (belum euforia)","status":"pass","detail":"30h -18%, 7h -4%"},{"label":"Backer Tier-1 ≥ 3","status":"unknown","detail":"data investor perlu verifikasi manual"}],"pass":4,"known":6,"total":8,"tier":"lemah","viral":false,"notes":[],"risks":["Mahal terhadap pendapatan (MC 138x pendapatan tahunan)","FDV 3.4x market cap: potensi dilusi besar","Turun >90% dari ATH: bisa berarti proyek sekarat, bukan diskon"],"buzz":{"reddit":0,"x":0,"analyst":0,"weight":0,"sent":null,"top":[]},"manual":null,"links":{"coingecko":"https://www.coingecko.com/en/coins/contoh-e","defillama":"https://defillama.com/protocol/contoh-e"}},{"id":"contoh-d","symbol":"CNTD","name":"Contoh Meme","rank":300,"price":1.0,"mc":120000000.0,"fdv":120000000.0,"vol":108000000.0,"chg7":55,"chg30":190,"ath_dd":0.30000000000000004,"tvl":null,"category":null,"chains":null,"rev30":null,"fees30":null,"ps":null,"mc_tvl":null,"fdv_mc":1.0,"vol_mc":0.9,"score":32,"bonus":0,"parts":{"valuasi":{"pts":6,"max":30,"note":"tanpa data pendapatan atau TVL"},"suplai":{"pts":15,"max":15,"note":"FDV/MC 1.00"},"drawdown":{"pts":6,"max":10,"note":"30% di bawah ATH"},"likuiditas":{"pts":5,"max":10,"note":"volume/MC 90.0%"},"fase":{"pts":0,"max":10,"note":"30h +190%, 7h +55%"},"senyap":{"pts":0,"max":25,"note":"bobot buzz 24.4 (ambang ramai 10)"}},"checklist":[{"label":"Kecil (market cap < $400 jt)","status":"pass","detail":"MC $120 jt"},{"label":"FDV/MC ≤ 1,5","status":"pass","detail":"FDV/MC 1.00"},{"label":"Tanpa unlock besar dalam 90 hari","status":"unknown","detail":"isi unlocks.json untuk memastikan"},{"label":"Pendapatan nyata","status":"unknown","detail":"tidak ada data DefiLlama"},{"label":"Valuasi murah (MC ≤ 12x pendapatan tahunan atau ≤ 0,4x TVL)","status":"unknown","detail":"tanpa data pendapatan atau TVL"},{"label":"Belum viral","status":"fail","detail":"bobot buzz 24.4 (ambang ramai 10)"},{"label":"Fase 1-2 (belum euforia)","status":"fail","detail":"30h +190%, 7h +55%"},{"label":"Backer Tier-1 ≥ 3","status":"unknown","detail":"data investor perlu verifikasi manual"}],"pass":2,"known":4,"total":8,"tier":"lemah","viral":true,"notes":[],"risks":["Tidak ada data pendapatan/TVL untuk menilai valuasi","Volume sangat tinggi terhadap MC: tanda spekulasi/hype","Sudah naik tajam 30 hari: kemungkinan sudah di fase euforia"],"buzz":{"reddit":5,"x":0,"analyst":0,"weight":24.44,"sent":0.0,"top":[{"src":"r/CryptoCurrency","title":"$CNTD Contoh Meme to the moon","url":"https://example.invalid/post","score":2500},{"src":"r/CryptoCurrency","title":"$CNTD Contoh Meme to the moon","url":"https://example.invalid/post","score":2500},{"src":"r/CryptoCurrency","title":"$CNTD Contoh Meme to the moon","url":"https://example.invalid/post","score":2500}]},"manual":null,"links":{"coingecko":"https://www.coingecko.com/en/coins/contoh-d","defillama":null}}],"manual":[{"symbol":"SYRUP","name":"Maple Finance","as_of":"2026-07-11","mc":205000000,"mc_note":"turunan: $36,93 jt staked = 18% market cap","facts":["TVL $2,265 M","ARR $17,6 jt (pendapatan Q2 $4,4 jt, +47% YoY)","MC/ARR sekitar 11,7x"],"thesis":"Kredit institusional on-chain, pendapatan nyata dan tumbuh, token masih kecil dibanding TVL.","unverified":["FDV dan jadwal unlock","daftar backer Tier-1"],"source":"https://www.kucoin.com/news/flash/maple-finance-tvl-surpasses-2-2b-amid-14-syrup-rally"},{"symbol":"PENDLE","name":"Pendle","as_of":"2026-04-12","mc":177000000,"mc_note":"valuasi menurut artikel","facts":["Turun ≈ 85% dari ATH $7,50","Buyback hingga 80% pendapatan","Pendapatan bulanan turun 87,6% (Agu 2025 ke Mar 2026)"],"thesis":"Kontrarian: harga sudah ambruk dan ada buyback, tetapi pendapatan yang menyusut membuat buyback ikut kecil.","unverified":["angka buyback artikel tidak konsisten","harga saat ini"],"source":"https://www.livebitcoinnews.com/pendle-drops-85-as-revenue-slumps-buyback-shift-signals-turnaround"},{"symbol":"CFG","name":"Centrifuge","as_of":"2026-05-10","mc":179600000,"mc_note":"menurut artikel","facts":["Volume harian $35,2 jt","Narasi RWA (aset dunia nyata ter-tokenisasi)"],"thesis":"Narasi RWA kuat, tetapi data tokenomics dan backer tidak ditemukan.","unverified":["FDV","suplai","TVL","backer"],"source":"https://yellow.com/news/centrifuge-cfg-price-rwa-tokenization-2026"},{"symbol":"LIT","name":"Lighter","as_of":"2026-07-17","mc":572000000,"mc_note":"menurut Tokenomist","facts":["FDV ≈ $2,29 M (FDV/MC ≈ 4,0)","Cliff 27 Des 2026: 500 jt LIT (tim 26% + investor 24%)","Burn 15,6 jt LIT, buyback $23 jt"],"thesis":"Burn dan buyback nyata, tetapi cliff Desember memberi tekanan suplai: hindari sebelum cliff lewat.","unverified":["harga saat ini"],"source":"https://tokenomist.ai/research/lighter-lit-tokenomics-robinhood-hype-a-real-burn-and-the-december-2026-cliff-2"}],"analyst_notes":[{"analyst":"Lark Davis","date":"2026-10-15","platform":"X / YouTube (dimuat ulang Coinpedia)","thesis":"Peluang terbesar ada di altcoin kecil bertenaga pendapatan yang diabaikan pasar; beberapa bisa naik 10x sampai 30x. Yang sudah reli punya ruang terbatas.","coins":[{"symbol":"AERO","stance":"promosi","note":"FDV $1,8 M, fee 30 hari $11,4 jt, merger Velodrome aktif 21 Okt. Ia sendiri memperingatkan kemungkinan sell-the-news. FDV besar: bukan koin kecil."},{"symbol":"NEAR","stance":"positif","note":"Ketahanan kuantum dan adopsi nyata, sekitar 75% di bawah ATH."},{"symbol":"SUI","stance":"positif","note":"Layer 1 yang belum reli (tanpa angka pendukung)."},{"symbol":"STRK","stance":"hindari","note":"FDV ≈ $1 M, MC ≈ $750 jt, ≈ 5.000 alamat aktif per hari."}],"source":"https://www.kucoin.com/news/flash/analyst-predicts-10x-to-30x-gains-for-revenue-earning-small-cap-altcoins"}],"seed_asof":"2026-10-31","demo":true};/*DEMO_HUNT_END*/
+const H={data:null,tier:'',sort:'score',quiet:true};
+const openH=new Set();
+const fU=v=>v==null?'-':v>=1e9?'$'+(v/1e9).toFixed(2)+' M':v>=1e6?'$'+(v/1e6).toFixed(v>=1e8?0:1)+' jt':'$'+Math.round(v).toLocaleString('en-US');
+const PLB={valuasi:'Valuasi',suplai:'Suplai',drawdown:'Diskon dari ATH',likuiditas:'Likuiditas',fase:'Fase harga',senyap:'Senyap (belum ramai)'};
+const TIERLB={prioritas:'Prioritas riset',pantau:'Pantau',lemah:'Lemah'};
+const stIc={pass:'✓',fail:'✕',unknown:'?'};
+function hVal(c){return c.ps!=null?['MC / pendapatan',c.ps.toFixed(1)+'x']:c.mc_tvl!=null?['MC / TVL',c.mc_tvl.toFixed(2)+'x']:['Valuasi','tidak ada data']}
+function hCard(c,i){
+  const v=hVal(c),b=c.buzz||{},dd=c.checklist.map(x=>`<i class="${x.status}" title="${esc(x.label)}: ${esc(x.detail)}"></i>`).join('');
+  const posts=(b.top||[]).map(t=>`<li><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.title)}</a> <span class="mut">(${esc(t.src)}, ${t.score})</span></li>`).join('');
+  const bars=Object.keys(PLB).map(k=>{const p=c.parts[k];return p?`<div class="pb"><span>${PLB[k]}</span><i><u style="width:${p.pts/p.max*100}%"></u></i><b>${p.pts}/${p.max}</b><em>${esc(p.note)}</em></div>`:''}).join('')+(c.bonus?`<div class="pb"><span>Insight analis</span><i></i><b>${c.bonus>0?'+':''}${c.bonus}</b><em>sentimen dari analis/pengguna X yang disebut</em></div>`:'');
+  const ck=c.checklist.map(x=>`<div class="ck ${x.status}"><b>${stIc[x.status]}</b><div>${esc(x.label)}<small>${esc(x.detail)}</small></div></div>`).join('');
+  const m=c.manual?`<div class="full"><h4>Riset manual (${esc(c.manual.as_of)})</h4><p style="margin:0;font-size:14px">${esc(c.manual.thesis)}</p></div>`:'';
+  const L=c.links||{};
+  return `<details class="hc" data-id="${esc(c.id)}"${openH.has(c.id)?' open':''}><summary>
+    <div class="rk">${i+1}</div>
+    <div class="nm"><b>$${esc(c.symbol)}</b> <span class="mut">${esc(c.name)}</span> <span class="pill ${c.tier}">${TIERLB[c.tier]}</span> <span class="pill ${c.viral?'viral':'quiet'}">${c.viral?'sudah ramai':'senyap'}</span><small>${esc(c.category||'Kategori tidak diketahui')} · lolos ${c.pass} dari ${c.known} cek terverifikasi</small><div class="dots" aria-label="Checklist tesis">${dd}</div></div>
+    <div class="mt"><span>Market cap</span><b>${fU(c.mc)}</b></div>
+    <div class="mt"><span>${v[0]}</span><b>${v[1]}</b></div>
+    <div class="mt"><span>FDV / MC</span><b>${c.fdv_mc!=null?c.fdv_mc.toFixed(2):'-'}</b></div>
+    <div class="sg">${Math.round(c.score)}<small>dari 100</small></div>
+    <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </summary><div class="hbody">
+    <div><h4>Rincian skor</h4>${bars}</div>
+    <div><h4>Checklist tesis Kalimasada</h4>${ck}</div>
+    <div><h4>Mengapa menarik</h4>${c.notes.length?`<ul>${c.notes.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="mut" style="margin:0;font-size:14px">Tidak ada keunggulan menonjol yang terukur.</p>'}
+      <h4 style="margin-top:14px">Risiko</h4>${c.risks.length?`<ul>${c.risks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="mut" style="margin:0;font-size:14px">Tidak ada bendera merah otomatis. Tetap cek unlock dan backer.</p>'}</div>
+    <div class="src"><h4>Pembicaraan sosial</h4><p style="margin:0 0 6px;font-size:14px">Reddit ${b.reddit||0} · X ${b.x||0} · analis ${b.analyst||0}${b.sent!=null?' · sentimen '+(b.sent>0?'+':'')+b.sent:''}</p>${posts?`<ul>${posts}</ul>`:'<p class="mut" style="margin:0;font-size:14px">Tidak ada pembahasan terdeteksi minggu ini. Itu yang dicari Hunter.</p>'}
+      <p style="margin:12px 0 0;display:flex;gap:8px;flex-wrap:wrap">${L.coingecko?`<a class="btnl" href="${esc(L.coingecko)}" target="_blank" rel="noopener">CoinGecko</a>`:''}${L.defillama?`<a class="btnl" href="${esc(L.defillama)}" target="_blank" rel="noopener">DefiLlama</a>`:''}</p></div>
+    ${m}
+  </div></details>`}
+function renderHunt(){
+  const d=H.data;if(!d)return;
+  let a=(d.candidates||[]).filter(c=>(!H.tier||c.tier===H.tier)&&(!H.quiet||!c.viral));
+  const key={score:c=>-c.score,mc:c=>c.mc,ps:c=>c.ps==null?1e9:c.ps,quiet:c=>(c.buzz&&c.buzz.weight||0)+(c.viral?100:0)}[H.sort];
+  a=a.slice().sort((x,y)=>key(x)-key(y));
+  const pr=(d.candidates||[]).filter(c=>c.tier==='prioritas').length,sr=d.sources||{};
+  const social=(sr.reddit&&sr.reddit.ok?1:0)+(sr.x&&sr.x.ok?1:0);
+  $('#hstats').innerHTML=[[(d.candidates||[]).length,'kandidat lolos saringan'],[pr,'prioritas riset'],[d.universe||0,'koin dipindai'],[social+'/2','sumber sosial aktif']].map(c=>`<div class="stat"><b>${c[0]}</b><span>${c[1]}</span></div>`).join('');
+  $('#hMeta').textContent=(d.demo?'data contoh · ':'')+(d.generated_at?'diperbarui '+ago(d.generated_at)+' · ':'')+a.length+' ditampilkan';
+  $('#hList').innerHTML=a.length?a.map(hCard).join(''):`<div class="scanwait">${(d.candidates||[]).length?'Tidak ada kandidat dengan filter ini. Matikan "sembunyikan yang sudah viral" atau ganti tingkat.':'Hunter belum punya hasil live. Di GitHub, hasil pertama muncul setelah workflow berjalan; sementara itu lihat riset manual di bawah.'}</div>`;
+  const mn=d.manual||[];
+  $('#hManual').innerHTML=`<h2>Riset manual</h2><p class="sub">Dikumpulkan dari artikel dan data publik, tiap catatan menyebut tanggal datanya.</p>`+(mn.length?mn.map(m=>`<div class="mnote"><b>$${esc(m.symbol)}</b> ${esc(m.name)} <span class="tag">${esc(m.as_of)}</span> <span class="tag">MC ≈ ${fU(m.mc)}</span><p>${esc(m.thesis)}</p><ul style="margin:4px 0;padding-left:18px;font-size:13.5px">${(m.facts||[]).map(f=>`<li>${esc(f)}</li>`).join('')}</ul>${(m.unverified||[]).length?`<p style="font-size:13px">Belum terverifikasi: ${esc(m.unverified.join(', '))}</p>`:''}<a href="${esc(m.source)}" target="_blank" rel="noopener" style="font-size:13px">Sumber</a></div>`).join(''):'<p class="mut">Belum ada.</p>');
+  const an=d.analyst_notes||[];
+  $('#hAnalyst').innerHTML=`<h2>Catatan analis</h2><p class="sub">Yang disebut analis bukan rekomendasi kami. Dicatat apa adanya beserta tanggal dan sumbernya.</p>`+(an.length?an.map(n=>`<div class="mnote"><b>${esc(n.analyst)}</b> <span class="tag">${esc(n.date)}</span> <span class="mut" style="font-size:12.5px">${esc(n.platform)}</span><p>${esc(n.thesis)}</p><ul style="margin:4px 0;padding-left:18px;font-size:13.5px">${(n.coins||[]).map(c=>`<li><b>$${esc(c.symbol)}</b> <span class="tag">${esc(c.stance)}</span> ${esc(c.note)}</li>`).join('')}</ul><a href="${esc(n.source)}" target="_blank" rel="noopener" style="font-size:13px">Sumber</a></div>`).join(''):'<p class="mut">Belum ada.</p>');
+  const rs=sr.reddit||{},xs=sr.x||{};
+  $('#hSrc').innerHTML=`<h2>Status sumber</h2><p class="sub">Hunter hanya menilai "senyap" bila sumber sosial terjangkau; bila tidak, nilainya netral.</p><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.7">
+   <li>CoinGecko: ${sr.coingecko?'aktif':'tidak terjangkau'}${d.universe?` (${d.universe} koin)`:''}</li><li>DefiLlama: ${sr.defillama?'aktif':'tidak terjangkau'}</li>
+   <li>Reddit: ${rs.ok!=null?rs.ok+' subreddit terbaca, '+rs.fail+' gagal':'-'}${sr.posts!=null?` (${sr.posts} post)`:''}</li>
+   <li>X: ${xs.off?'mati (pasang X_BEARER_TOKEN dan X_ANALYSTS)':xs.ok!=null?xs.ok+' kueri berhasil, '+xs.fail+' gagal':'-'}</li>
+   <li>CoinGecko Trending: ${sr.trending!=null?sr.trending+' koin ditandai viral':'-'}</li></ul>
+   <p class="sub" style="margin:12px 0 0">Skor menyaring bahan riset, bukan sinyal beli. Verifikasi backer, unlock, dan kontrak sendiri sebelum bertindak.</p>`;
+}
+async function initHunt(){
+  try{H.data=(S.demo&&DEMO_HUNT)?DEMO_HUNT:await getJSON('/api/hunt')}catch(e){H.data={candidates:[],manual:[],analyst_notes:[],sources:{}}}
+  renderHunt();
+}
+$$('#hunter [data-tier]').forEach(b=>b.onclick=()=>{H.tier=b.dataset.tier;$$('#hunter [data-tier]').forEach(x=>x.setAttribute('aria-pressed',x===b));renderHunt()});
+$('#hSort').onchange=e=>{H.sort=e.target.value;renderHunt()};
+$('#hQuiet').onchange=e=>{H.quiet=e.target.checked;renderHunt()};
+$('#hList').addEventListener('toggle',e=>{const d=e.target;if(d.tagName==='DETAILS'&&d.dataset.id){d.open?openH.add(d.dataset.id):openH.delete(d.dataset.id)}},true);
+setInterval(()=>{if(!S.demo)initHuntQuiet()},300000);
+async function initHuntQuiet(){try{const r=await getJSON('/api/hunt');if((r.candidates||[]).length){H.data=r;renderHunt()}}catch(e){}}
+
 /* ---------- interaksi ---------- */
 $$('.seg button').forEach(b=>b.onclick=()=>{S.dir=b.dataset.dir;$$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderFeed()});
 $('#fMin').onchange=e=>{S.min=+e.target.value;renderFeed()};
@@ -602,7 +740,7 @@ function copy(txt){
 }
 
 /* ---------- data live ---------- */
-const STATIC_MAP={'/api/news':'data/news.json','/api/top5':'data/top5.json','/api/predictions':'data/predictions.json','/api/stats':'data/stats.json','/api/prices':'data/prices.json','/api/scan/index':'data/scan/index.json'};
+const STATIC_MAP={'/api/news':'data/news.json','/api/top5':'data/top5.json','/api/predictions':'data/predictions.json','/api/stats':'data/stats.json','/api/prices':'data/prices.json','/api/scan/index':'data/scan/index.json','/api/hunt':'data/hunt.json'};
 const staticPath=u=>{if(STATIC_MAP[u])return STATIC_MAP[u];const m=u.match(/^\/api\/scan\?symbol=([A-Z0-9]+)/);if(m)return 'data/scan/'+m[1]+'.json';throw new Error('unknown')};
 const fj=u=>fetch(u,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
 /* Server live: /api/*. Hosting statis (GitHub Pages): data/*.json yang diperbarui GitHub Actions. */
@@ -639,9 +777,9 @@ async function init(){
   if(!live){S.demo=true;S.items=demoItems();S.stats=DEMO_STATS;
     S.prices={PEPE:{usd:103.4},BTC:{usd:102.1},BNB:{usd:101.1}};
     S.top=calcTop(Object.values(S.items));S.pred=calcPred(Object.values(S.items));
-    setLive('demo','pratinjau');$('#banner').hidden=false;$('#foot').textContent='mode pratinjau';renderAll();initScan();return}
+    setLive('demo','pratinjau');$('#banner').hidden=false;$('#foot').textContent='mode pratinjau';renderAll();initScan();initHunt();return}
   if(S.demo){$('#banner').hidden=false}
-  renderAll();await loadSide();initScan();
+  renderAll();await loadSide();initScan();initHunt();
   if(S.static){
     setLive(S.demo?'demo':'on','data diperbarui berkala');
     setInterval(refreshStatic,60000);return}

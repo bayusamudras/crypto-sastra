@@ -1,0 +1,36 @@
+{
+  "asof": "2026-10-31",
+  "_petunjuk": "Riset manual yang dicatat dengan tanggal datanya. Angka bisa sudah usang; Hunter live menghitung ulang bila sumber terjangkau. Tambahkan catatan analis di analyst_notes.",
+  "manual": [
+    {"symbol": "SYRUP", "name": "Maple Finance", "as_of": "2026-07-11", "mc": 205000000, "mc_note": "turunan: $36,93 jt staked = 18% market cap",
+     "facts": ["TVL $2,265 M", "ARR $17,6 jt (pendapatan Q2 $4,4 jt, +47% YoY)", "MC/ARR sekitar 11,7x"],
+     "thesis": "Kredit institusional on-chain, pendapatan nyata dan tumbuh, token masih kecil dibanding TVL.",
+     "unverified": ["FDV dan jadwal unlock", "daftar backer Tier-1"],
+     "source": "https://www.kucoin.com/news/flash/maple-finance-tvl-surpasses-2-2b-amid-14-syrup-rally"},
+    {"symbol": "PENDLE", "name": "Pendle", "as_of": "2026-04-12", "mc": 177000000, "mc_note": "valuasi menurut artikel",
+     "facts": ["Turun ≈ 85% dari ATH $7,50", "Buyback hingga 80% pendapatan", "Pendapatan bulanan turun 87,6% (Agu 2025 ke Mar 2026)"],
+     "thesis": "Kontrarian: harga sudah ambruk dan ada buyback, tetapi pendapatan yang menyusut membuat buyback ikut kecil.",
+     "unverified": ["angka buyback artikel tidak konsisten", "harga saat ini"],
+     "source": "https://www.livebitcoinnews.com/pendle-drops-85-as-revenue-slumps-buyback-shift-signals-turnaround"},
+    {"symbol": "CFG", "name": "Centrifuge", "as_of": "2026-05-10", "mc": 179600000, "mc_note": "menurut artikel",
+     "facts": ["Volume harian $35,2 jt", "Narasi RWA (aset dunia nyata ter-tokenisasi)"],
+     "thesis": "Narasi RWA kuat, tetapi data tokenomics dan backer tidak ditemukan.",
+     "unverified": ["FDV", "suplai", "TVL", "backer"],
+     "source": "https://yellow.com/news/centrifuge-cfg-price-rwa-tokenization-2026"},
+    {"symbol": "LIT", "name": "Lighter", "as_of": "2026-07-17", "mc": 572000000, "mc_note": "menurut Tokenomist",
+     "facts": ["FDV ≈ $2,29 M (FDV/MC ≈ 4,0)", "Cliff 27 Des 2026: 500 jt LIT (tim 26% + investor 24%)", "Burn 15,6 jt LIT, buyback $23 jt"],
+     "thesis": "Burn dan buyback nyata, tetapi cliff Desember memberi tekanan suplai: hindari sebelum cliff lewat.",
+     "unverified": ["harga saat ini"],
+     "source": "https://tokenomist.ai/research/lighter-lit-tokenomics-robinhood-hype-a-real-burn-and-the-december-2026-cliff-2"}
+  ],
+  "analyst_notes": [
+    {"analyst": "Lark Davis", "date": "2026-10-15", "platform": "X / YouTube (dimuat ulang Coinpedia)",
+     "thesis": "Peluang terbesar ada di altcoin kecil bertenaga pendapatan yang diabaikan pasar; beberapa bisa naik 10x sampai 30x. Yang sudah reli punya ruang terbatas.",
+     "coins": [
+       {"symbol": "AERO", "stance": "promosi", "note": "FDV $1,8 M, fee 30 hari $11,4 jt, merger Velodrome aktif 21 Okt. Ia sendiri memperingatkan kemungkinan sell-the-news. FDV besar: bukan koin kecil."},
+       {"symbol": "NEAR", "stance": "positif", "note": "Ketahanan kuantum dan adopsi nyata, sekitar 75% di bawah ATH."},
+       {"symbol": "SUI", "stance": "positif", "note": "Layer 1 yang belum reli (tanpa angka pendukung)."},
+       {"symbol": "STRK", "stance": "hindari", "note": "FDV ≈ $1 M, MC ≈ $750 jt, ≈ 5.000 alamat aktif per hari."}],
+     "source": "https://www.kucoin.com/news/flash/analyst-predicts-10x-to-30x-gains-for-revenue-earning-small-cap-altcoins"}
+  ]
+}

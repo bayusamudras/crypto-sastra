@@ -16,6 +16,11 @@ try:
 except Exception as _e:      # scan.py opsional; fitur Scan Institusional mati bila tidak ada
     scan = None
     print('scan.py tidak dimuat:', _e)
+try:
+    import hunter
+except Exception as _e:      # hunter.py opsional
+    hunter = None
+    print('hunter.py tidak dimuat:', _e)
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from email.utils import parsedate_to_datetime
 
@@ -122,6 +127,7 @@ LOCK = threading.Lock()
 NEWS = {}                 # id -> item
 SEEN = set()
 SUBS = []                 # SSE subscribers
+HUNT = {}                 # hasil Hunter terakhir (mode server)
 SCANS = {}                # symbol -> hasil Scan Institusional (mode server)
 SCAN_PER_RUN = int(os.getenv("SCAN_PER_RUN", "3"))   # jumlah koin yang dipindai per siklus (mode Actions)
 STARTED = time.time()
@@ -436,6 +442,7 @@ def start_collectors():
     runner(pull_prices)
     runner(evaluate_outcomes)
     if scan: threading.Thread(target=scan_loop, daemon=True).start()
+    if hunter: threading.Thread(target=hunt_loop, daemon=True).start()
 
 # ---------------------------------------------------------------- demo (kalau offline)
 def seed_demo():
@@ -496,6 +503,15 @@ def stats_api():
              "avg_ret_pct": round(s["sum_ret"] / s["n"], 2) if s["n"] else None,
              "avg_alpha_pct": round(s.get("sum_alpha", s["sum_ret"]) / s["n"], 2) if s["n"] else None,
              "weight_multiplier": event_multiplier(e), "calibrated": s["n"] >= MIN_SAMPLES} for e, s in STATS.items()]
+
+def hunt_loop():
+    """Mode server: jalankan Hunter berulang tiap HUNT_EVERY_MIN menit (default 55)."""
+    while True:
+        try:
+            r = hunter.hunt()
+            if r["candidates"]: HUNT.clear(); HUNT.update(r)
+        except Exception as e: print("hunter gagal:", e)
+        time.sleep(hunter.HUNT_EVERY)
 
 def scan_rotation(d, load, dump):
     """Mode Actions: pindai SCAN_PER_RUN koin dengan hasil paling lama, tulis data/scan/*.json."""
@@ -559,6 +575,9 @@ def once():
     if scan:
         try: scan_rotation(d, load, dump)
         except Exception as e: print("scan rotasi gagal:", e)
+    if hunter:
+        try: hunter.run(load, dump)
+        except Exception as e: print("hunter gagal:", e)
     print(f"siklus selesai: {len(items)} berita, {len(PRICES)} harga, bootstrap={BOOTSTRAP}, alert_terkirim={len(ALERT_LOG)}")
 
 # ---------------------------------------------------------------- HTTP
@@ -576,6 +595,7 @@ class H(BaseHTTPRequestHandler):
         elif path == "/health": self._json({"ok": True, "items": len(NEWS), "uptime": int(time.time() - STARTED)})
         elif path == "/api/prices": self._json(prices_api())
         elif path == "/api/stats": self._json(stats_api())
+        elif path == "/api/hunt": self._json(HUNT or hunter.empty())
         elif path == "/api/scan/index": self._json(sorted([scan.index_entry(r) for r in SCANS.values()], key=lambda e: e["symbol"]) if scan else [])
         elif path == "/api/scan":
             sym = (urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("symbol", [""])[0] or "").upper()
