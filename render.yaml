@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: crypto-sastra
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: POLL_SECONDS
+        value: "20"
+      - key: ALERT_MIN_SCORE
+        value: "70"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: X_BEARER_TOKEN
+        sync: false
+      - key: CRYPTOPANIC_KEY
+        sync: false
