@@ -2,7 +2,7 @@ services:
   - type: web
     name: crypto-sastra
     runtime: docker
-    plan: starter
+    plan: free
     healthCheckPath: /health
     envVars:
       - key: POLL_SECONDS
