@@ -11,6 +11,11 @@ Mode GitHub Actions: python3 server.py --once  -> satu siklus, hasil ditulis ke 
 """
 import json, os, re, sys, time, threading, hashlib, math, queue, urllib.request, urllib.parse
 import xml.etree.ElementTree as ET
+try:
+    import scan
+except Exception as _e:      # scan.py opsional; fitur Scan Institusional mati bila tidak ada
+    scan = None
+    print('scan.py tidak dimuat:', _e)
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from email.utils import parsedate_to_datetime
 
@@ -117,6 +122,8 @@ LOCK = threading.Lock()
 NEWS = {}                 # id -> item
 SEEN = set()
 SUBS = []                 # SSE subscribers
+SCANS = {}                # symbol -> hasil Scan Institusional (mode server)
+SCAN_PER_RUN = int(os.getenv("SCAN_PER_RUN", "3"))   # jumlah koin yang dipindai per siklus (mode Actions)
 STARTED = time.time()
 
 # ---------------------------------------------------------------- harga live & kalibrasi
@@ -213,7 +220,8 @@ def analyze(item):
     action = [
         f"Verifikasi: cari konfirmasi di sumber resmi (website/X proyek, pengumuman exchange) sebelum bertindak.",
         strategy,
-        "Risiko: maksimum 1-2% modal per trade, pasang stop-loss, hindari leverage tinggi.",
+        "Risiko: maksimum 1% modal per trade dengan stop struktural; tanpa leverage pada altcoin; total altcoin 10-30% portofolio (3-5 posisi).",
+        "Moonbag: bila posisi naik 100%, jual 50% sehingga sisanya bebas risiko. Altcoin jarang layak ditahan lebih dari 2-4 bulan.",
     ]
     reasons = []
     if ev: reasons.append(f"Terdeteksi jenis kejadian '{label}' (bobot dampak {int(weight*100)}/100).")
@@ -398,6 +406,19 @@ def evaluate_outcomes():
             changed.append(it)
     for it in changed: push(it, "update")
 
+def scan_loop():
+    """Mode server: pindai semua koin bergiliran (hemat rate limit), lalu ulangi tiap ~30 menit."""
+    while True:
+        try: mk = scan.fetch_markets()
+        except Exception as e: mk = {}; print("scan markets gagal:", e)
+        try: macro = scan.fetch_macro()
+        except Exception: macro = None
+        for sym in scan.SCAN_SYMBOLS:
+            try: SCANS[sym] = scan.scan_symbol(sym, {sym: mk.get(sym)}, list(NEWS.values()), macro)
+            except Exception as e: print(f"scan {sym} gagal: {e}")
+            time.sleep(40)
+        time.sleep(1800)
+
 def runner(fn, *a):
     def loop():
         while True:
@@ -414,6 +435,7 @@ def start_collectors():
     runner(pull_gecko_trending)
     runner(pull_prices)
     runner(evaluate_outcomes)
+    if scan: threading.Thread(target=scan_loop, daemon=True).start()
 
 # ---------------------------------------------------------------- demo (kalau offline)
 def seed_demo():
@@ -475,6 +497,21 @@ def stats_api():
              "avg_alpha_pct": round(s.get("sum_alpha", s["sum_ret"]) / s["n"], 2) if s["n"] else None,
              "weight_multiplier": event_multiplier(e), "calibrated": s["n"] >= MIN_SAMPLES} for e, s in STATS.items()]
 
+def scan_rotation(d, load, dump):
+    """Mode Actions: pindai SCAN_PER_RUN koin dengan hasil paling lama, tulis data/scan/*.json."""
+    os.makedirs(os.path.join(d, "scan"), exist_ok=True)
+    idx = {e["symbol"]: e for e in load("scan/index.json", [])}
+    order = sorted(scan.SCAN_SYMBOLS, key=lambda x: idx.get(x, {}).get("generated_at", 0))[:SCAN_PER_RUN]
+    mk = scan.fetch_markets(); macro = None
+    try: macro = scan.fetch_macro()
+    except Exception: pass
+    for sym in order:
+        try:
+            r = scan.scan_symbol(sym, {sym: mk.get(sym)}, list(NEWS.values()), macro)
+            dump(f"scan/{sym}.json", r); idx[sym] = scan.index_entry(r)
+        except Exception as e: print(f"scan {sym} gagal: {e}")
+    dump("scan/index.json", sorted(idx.values(), key=lambda e: e["symbol"]))
+
 def prices_api():
     return {s: {"usd": v[0], "chg24h": v[2] if len(v) > 2 else None} for s, v in PRICES.items()}
 
@@ -519,6 +556,9 @@ def once():
     dump("top5.json", top5()); dump("predictions.json", predictions()); dump("stats.json", stats_api()); dump("prices.json", prices_api())
     dump("state.json", {"alerts": [t for t in ALERT_LOG if now - t < 3600], "last_run": int(now)})
     save_stats()
+    if scan:
+        try: scan_rotation(d, load, dump)
+        except Exception as e: print("scan rotasi gagal:", e)
     print(f"siklus selesai: {len(items)} berita, {len(PRICES)} harga, bootstrap={BOOTSTRAP}, alert_terkirim={len(ALERT_LOG)}")
 
 # ---------------------------------------------------------------- HTTP
@@ -536,6 +576,14 @@ class H(BaseHTTPRequestHandler):
         elif path == "/health": self._json({"ok": True, "items": len(NEWS), "uptime": int(time.time() - STARTED)})
         elif path == "/api/prices": self._json(prices_api())
         elif path == "/api/stats": self._json(stats_api())
+        elif path == "/api/scan/index": self._json(sorted([scan.index_entry(r) for r in SCANS.values()], key=lambda e: e["symbol"]) if scan else [])
+        elif path == "/api/scan":
+            sym = (urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("symbol", [""])[0] or "").upper()
+            if not scan or sym not in scan.COINS: return self._json({"error": "simbol tidak didukung", "supported": list(scan.COINS) if scan else []})
+            if sym not in SCANS:
+                try: SCANS[sym] = scan.scan_symbol(sym, None, list(NEWS.values()))
+                except Exception as e: return self._json({"error": f"scan gagal: {e}"})
+            self._json(SCANS[sym])
         elif path == "/api/top5": self._json(top5())
         elif path == "/api/predictions": self._json(predictions())
         elif path == "/events":

@@ -6,6 +6,9 @@ berdampak, lalu **mengukur akurasi sinyalnya terhadap harga (vs BTC)** dan mengk
 
 ## Struktur
 ```
+scan.py                    mesin Scan Institusional (6 modul + SMC/ICT)
+unlocks.json, macro.json   input manual untuk modul 3 dan 5
+tests/                     uji mesin scan (python3 tests/test_scan.py)
 server.py                  backend: pengumpul berita, analisis, harga, kalibrasi, alert Telegram, API + SSE; --once = satu siklus untuk Actions
 .github/workflows/collect.yml  jadwal GitHub Actions (cron 5 menit) yang menerbitkan ke gh-pages
 static/index.html          website (hasil build, dilayani server)
@@ -19,6 +22,27 @@ python3 server.py            # Python 3.9+, tanpa dependensi
 # buka http://localhost:8000
 ```
 Tanpa akses internet ke sumber, server memuat data contoh (diberi label "Contoh"). Uji harga offline: `SIM_PRICES=1 python3 server.py`.
+
+## Scan Institusional (doktrin Kalimasada + SMC/ICT)
+Untuk tiap koin (16 koin di `scan.py`) tersedia scan enam modul dan skor akhir /10, sesuai alur institusional:
+
+| Modul | Isi | Sumber gratis |
+|---|---|---|
+| 1 Narasi dan lifecycle | Fase 1-4 (akumulasi, validasi, euforia, kelelahan) dari drawdown, momentum, SMA-200, volume, dan berita radar; filter Top of Mind (30 besar) | Binance/OKX, CoinGecko |
+| 2 On-chain dan fundamental | NVT, MVRV, MC/TVL, pendapatan, aktivitas | CoinMetrics (BTC/ETH), DefiLlama, proxy bila tidak tersedia |
+| 3 Tokenomics | FDV vs beredar, unlock 7-90 hari, mekanisme deflasi | CoinGecko, `unlocks.json`, data kurasi |
+| 4 Smart money | Backer Tier-1, aturan minimal 3 entitas, playbook a16z/Pantera/Animoca | Data kurasi (verifikasi manual) |
+| 5 Makro dan regulasi | Fear and Greed, dominasi BTC, berita regulasi/ETF di radar, sikap The Fed | alternative.me, CoinGecko, `macro.json` |
+| 6 SMC/ICT | Struktur weekly/daily, swing, FVG, likuiditas (EQH/EQL), OTE 0,62-0,79, entry, stop struktural, target, Moonbag +100% | Binance/OKX |
+
+Skor akhir = narasi 20% + fundamental 20% + tokenomics 15% + smart money 15% + makro 10% + SMC 20%.
+Fase 3 selalu berujung **Distribute** dan fase 4 **Avoid**. Ukuran posisi = min(batas skor 5-10%, alokasi yang membuat stop = 1% portofolio); altcoin total 10-30%, tanpa leverage; Moonbag: jual 50% saat +100%.
+
+**Kejujuran data (penting):** NVT on-chain, MVRV sejati, dan alamat aktif tidak tersedia gratis untuk kebanyakan koin. Bila begitu,
+scan memakai *proxy* yang diberi label jelas (mis. kapitalisasi/volume bursa, harga/VWAP 365 hari) dan menuliskannya di "Keterbatasan data".
+Daftar backer dan mekanisme burn adalah pengetahuan umum per Jun 2026: verifikasi di ChainBroker/Crunchbase. Isi `unlocks.json` (TokenUnlocks/Tokenomist)
+dan `macro.json` (sikap The Fed) agar modul 3 dan 5 lengkap. Mode server memindai semua koin bergiliran (tiap ~30 menit);
+mode GitHub memindai `SCAN_PER_RUN` (default 3) koin tertua tiap siklus. Uji mesin scan: `python3 tests/test_scan.py`.
 
 ## Hosting gratis dari GitHub (tanpa server, tanpa domain berbayar)
 Website di **GitHub Pages**, pengumpul berita di **GitHub Actions** (`.github/workflows/collect.yml`, jalan tiap ~5 menit).
@@ -71,7 +95,7 @@ Lalu pasang Caddy atau Nginx sebagai reverse proxy ke port 8000 agar dapat HTTPS
 Kunci dan token bersifat rahasia: simpan di environment/secret hosting, jangan di-commit.
 
 ## Endpoint
-`/` website · `/api/news` · `/api/top5` · `/api/predictions` · `/api/prices` · `/api/stats` · `/events` (SSE) · `/health`
+`/` website · `/api/scan?symbol=SOL` · `/api/scan/index` · `/api/news` · `/api/top5` · `/api/predictions` · `/api/prices` · `/api/stats` · `/events` (SSE) · `/health`
 
 ## Cara skor dihitung
 `skor = bobot_event × kredibilitas × skala_proyek × urgensi × kesegaran`. Harga dicatat saat berita muncul dan diukur 1/6/24 jam

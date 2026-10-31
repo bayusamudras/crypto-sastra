@@ -172,6 +172,43 @@ th,td{text-align:left;padding:7px 8px;border-top:1px solid var(--line);white-spa
 th{font:600 11px var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--mut);border-top:0}
 td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 
+/* Scan institusional */
+.scan{padding-block:12px 40px}
+.scanhead{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.scanhead h2{font-family:var(--f-display);font-weight:500;font-size:clamp(26px,3.4vw,36px);letter-spacing:-.02em;margin:0 0 4px}
+.scanhead p{margin:0;color:var(--mut);max-width:64ch}
+.verdict{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center;padding:20px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow);margin-bottom:14px}
+.vscore{font:600 56px/1 var(--f-mono);letter-spacing:-.04em}.vscore small{font-size:20px;color:var(--mut);letter-spacing:0}
+.verdict h3{margin:0 0 4px;font-size:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.verdict p{margin:0 0 10px;color:var(--mut)}
+.mods{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.mods div{min-width:0}.mods span{display:block;font-size:11.5px;color:var(--mut);line-height:1.25;min-height:28px}
+.mods b{font:600 14px var(--f-mono)}.mods i{display:block;height:4px;border-radius:4px;background:var(--surface2);margin-top:4px;overflow:hidden}.mods i u{display:block;height:100%;background:var(--accent)}
+@media(max-width:900px){.verdict{grid-template-columns:1fr}.mods{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.sgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media(max-width:900px){.sgrid{grid-template-columns:1fr}}
+.sc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.sc.full{grid-column:1/-1}
+.sc h3{margin:0 0 10px;font-size:15px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.sc h3 em{font:600 12px var(--f-mono);font-style:normal;color:var(--mut)}
+.sc ul{margin:6px 0;padding-left:18px;font-size:14px}.sc li{margin:2px 0}
+.sc .k{font:600 11.5px var(--f-body);letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:12px 0 4px}
+.phase{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0 10px}
+.phase div{padding:8px 6px;border:1px solid var(--line);border-radius:8px;text-align:center;font-size:12px;color:var(--mut)}
+.phase div b{display:block;font:italic 500 20px var(--f-display);color:inherit}
+.phase div.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.sc table td{white-space:normal;vertical-align:top}
+.ladder{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.ladder div{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-top:1px solid var(--line);font-size:14px}
+.ladder div:first-child{border-top:0}
+.ladder .p{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:600}
+.ladder .now{background:var(--accent-soft);font-weight:600}
+.ladder .tgt .p{color:var(--up)}.ladder .stp .p{color:var(--dn)}.ladder .zone{background:var(--up-soft)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips .t1{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.gaps{margin-top:14px;padding:12px 16px;border-radius:var(--r);background:var(--warn-soft);color:var(--warn);font-size:13.5px}
+.gaps ul{margin:6px 0 0;padding-left:18px}
+.scanwait{padding:36px 16px;text-align:center;color:var(--mut);border:1px dashed var(--line);border-radius:var(--r)}
 /* Cara kerja */
 .how{padding-block:44px;border-top:1px solid var(--line)}
 .how h2{font-family:var(--f-display);font-weight:500;font-size:clamp(26px,3.4vw,36px);letter-spacing:-.02em;margin:0 0 8px;text-wrap:balance}
@@ -204,7 +241,7 @@ footer p{margin:0;max-width:78ch}
       <span class="wordmark">Crypto <em>Sastra</em></span>
     </a>
     <nav class="nav" aria-label="Navigasi">
-      <a href="#radar">Radar</a><a href="#top5">Top 5</a><a href="#akurasi">Akurasi</a><a href="#cara-kerja">Cara kerja</a>
+      <a href="#radar">Radar</a><a href="#top5">Top 5</a><a href="#akurasi">Akurasi</a><a href="#scan">Scan</a><a href="#cara-kerja">Cara kerja</a>
     </nav>
     <div class="sp"></div>
     <span class="live" id="live"><i></i><span id="liveTxt">menghubungkan…</span></span>
@@ -261,6 +298,14 @@ footer p{margin:0;max-width:78ch}
     </section>
   </aside>
 </main>
+
+<section class="wrap scan" id="scan" aria-label="Scan institusional">
+  <div class="scanhead">
+    <div><h2>Scan institusional</h2><p>Doktrin Kalimasada dalam enam modul, ditutup dengan rencana eksekusi SMC/ICT dan skor akhir dari 10. Tiap angka menyebut sumbernya; data yang tidak tersedia ditulis N/A.</p></div>
+    <div class="bar" style="margin:0"><label class="sr" for="scanSel">Koin</label><select class="field" id="scanSel"></select><span id="scanMeta" class="mut" style="font-size:13px"></span></div>
+  </div>
+  <div id="scanOut"><div class="scanwait">Memuat daftar scan…</div></div>
+</section>
 
 <section class="how" id="cara-kerja">
   <div class="wrap">
@@ -354,7 +399,7 @@ function demoItems(){
     out[id]={id,source:x.s,title:x.t,summary:x.d,url:'#',published:pub,first_seen:pub+x.l*60,credibility:x.c,demo:true,projects:x.p,event:x.ev,direction:x.dir,score:x.sc,confidence:x.cf,
       impact:`${x.ev}: ${x.dir==='bullish'?'positif':'negatif'} untuk ${x.p.join(', ')}.`,
       reasons:[`Terdeteksi jenis kejadian '${x.ev}'.`,`Kredibilitas sumber ${x.s}: ${Math.round(x.c*100)}%.`,`Kesegaran berita: ${x.m} menit lalu.`],
-      action:['Verifikasi: cari konfirmasi di sumber resmi sebelum bertindak.',T.a,'Risiko: maksimum 1-2% modal per trade, pasang stop-loss, hindari leverage tinggi.'],
+      action:['Verifikasi: cari konfirmasi di sumber resmi sebelum bertindak.',T.a,'Risiko: maksimum 1% modal per trade dengan stop struktural; tanpa leverage pada altcoin; total altcoin 10-30% portofolio (3-5 posisi).','Moonbag: bila posisi naik 100%, jual 50% sehingga sisanya bebas risiko. Altcoin jarang layak ditahan lebih dari 2-4 bulan.'],
       exit:x.dir==='bullish'?`Jendela jual ideal: ${T.h[0]}-${T.h[1]} jam setelah berita.`:`Keluar secepatnya, paling lambat ${T.h[1]} jam. Pertimbangkan masuk kembali setelah harga stabil.`,
       ripple:x.rel.map(r=>({symbol:r,reason:`Terkait ${x.p[0]} (sektor atau ekosistem), dampak tidak langsung`})),predictions:T.f,ai:null,track:tr};
   });
@@ -426,7 +471,7 @@ function card(i){
      ${i.ai?`<div class="wide"><h4>Analisis AI</h4><pre>${esc(i.ai)}</pre></div>`:''}
     </div>
    </details>
-   <div class="acts">${i.projects.slice(0,2).map(p=>`<button class="btn" data-watch="${esc(p)}" aria-pressed="${watch.has(p)}">${watch.has(p)?'Dipantau':'Pantau'} $${esc(p)}</button>`).join('')}<button class="btn" data-copy="${esc(i.id)}">Salin ringkasan</button></div>
+   <div class="acts">${i.projects.slice(0,2).map(p=>`<button class="btn" data-watch="${esc(p)}" aria-pressed="${watch.has(p)}">${watch.has(p)?'Dipantau':'Pantau'} $${esc(p)}</button>`).join('')}${i.projects[0]?`<button class="btn" data-scan="${esc(i.projects[0])}">Scan $${esc(i.projects[0])}</button>`:''}<button class="btn" data-copy="${esc(i.id)}">Salin ringkasan</button></div>
   </div></article>`;
 }
 function renderFeed(){
@@ -454,6 +499,78 @@ function renderSide(){
 }
 function renderAll(){renderStats();renderFeed();renderSide()}
 
+/* ---------- scan institusional ---------- */
+/*DEMO_SCAN_START*/const DEMO_SCAN={"symbol":"SOL","name":"Solana","generated_at":1793437857,"price":171.98454265903445,"demo":true,"narrative":{"sector":"L1 throughput tinggi (PayFi, DEX, aplikasi konsumer)","lifecycle":{"phase":2,"label":"Validasi","entry_quality":"Entry aman","why":["Jarak dari high 1 tahun: -26%; dari low 1 tahun: +20%.","Perubahan 30 hari +1%, 90 hari -8%.","Harga 0.96x SMA-200 (di bawah).","Volume 7 hari 1.00x rata-rata 90 hari; 0 berita 48 jam di radar."],"scores":{"1":2.5,"2":3.0,"3":0.0,"4":2.0},"metrics":{"dd":-0.25935953680122137,"ch30":0.008746703165412706,"ch90":-0.07741368720990538,"ext":0.964544022445113,"vr":1.0}},"rank":5,"top_of_mind":true,"thesis":"Solana: L1 throughput tinggi (PayFi, DEX, aplikasi konsumer).","filter":"Lolos filter Paradox of Choices (market leader peringkat 5).","score":8.0},"fundamentals":{"nvt":{"value":57.77777777777778,"kind":"proxy: kapitalisasi / volume bursa 24 jam (BUKAN NVT on-chain murni)","tone":"fair","verdict":"Perputaran rendah, minat sepi","note":"Proxy hanya menggambarkan perputaran bursa; NVT on-chain butuh data transfer (CoinMetrics/Glassnode)."},"mvrv":{"value":1.0285205932640185,"kind":"proxy: harga / VWAP 365 hari (BUKAN realized cap)","tone":"fair","verdict":"Sedikit di atas biaya rata-rata","note":"Realized cap sejati butuh Glassnode/CoinMetrics berbayar untuk aset ini."},"tvl":{"value":5.263157894736842,"tvl_usd":16992072814.712603,"source":"DefiLlama (chain: Solana)","tone":"poor","verdict":"Premium tinggi dibanding modal terkunci","note":">1: valuasi lebih besar daripada dana di dalam protokol.","ch30":0.08},"activity":["TVL 30 hari: +8.0%.","Pendapatan protokol 30 hari: $35,000,000; rata-rata 7 hari +8% vs rata-rata 30 hari."],"score":5.5},"tokenomics":{"fdv_ratio":1.1730769230769231,"circ_pct":85.24590163934425,"fdv_risk":"Rendah","fdv":104910571022.01102,"mcap":89431962182.6979,"unlocks":[],"unlock_news":[],"deflation":{"status":"Parsial","note":"Sebagian fee dasar dibakar; emisi staking masih lebih besar."},"score":8.75,"fdv_note":"FDV mendekati kapitalisasi; risiko dilusi rendah."},"smart_money":{"backers":["a16z","Polychain","Multicoin","Jump"],"tier1":["a16z","Polychain","Multicoin","Jump"],"tier1_count":4,"rule_met":true,"playbook":["Playbook a16z: inkubasi dalam dan pembangunan ekosistem, horizon panjang."],"note":"Riwayat eksposur FTX/Alameda","score":8.0,"verdict":"Memenuhi aturan minimal 3 entitas Tier-1."},"macro":{"fng":{"value":41,"label":"Fear"},"global":{"btc_dom":58.2,"mcap_24h":0.9},"reg":{"pos":0,"neg":0},"fed":"Belum diisi (edit macro.json: sikap The Fed, suku bunga, likuiditas)","tailwinds":["Total kapitalisasi pasar +0.9% 24 jam; dominasi BTC 58.2%."],"headwinds":[],"score":5.0},"smc":{"htf":{"bias":"range","note":"Swing campuran (konsolidasi).","swing_high":173.8391624726249,"swing_low":168.37230502389397},"ltf":{"bias":"range","note":"Swing campuran (konsolidasi).","swing_high":172.26181211144967,"swing_low":169.88539337182792},"eqh":[172.75493698],"eql":[143.53802687,169.44141835],"fvgs":[],"ote":{"lo":162.05809218579998,"hi":177.15419458080635,"sweet":169.60614338330316,"eq":187.8102668596344,"leg_low":143.4099656978509,"leg_high":232.21056802141788},"setup":{"valid":true,"label":"OTE (Fib 0,62 s/d 0,79)","zone":[162.05809218579998,177.15419458080635],"entry":169.60614338330316,"stop":142.61620515778864,"t1":232.21056802141788,"t2":256.3643318534281,"moonbag":339.2122867666063,"rr":2.319546792401792,"status":"di dalam zona","stop_pct":15.913302246675304,"reason":"Struktur HTF dan LTF selaras, RR memadai.","confluence":false},"atr":1.5875210801245336,"score":7.0},"barbell":{"alt_cap_pct":7,"risk_alloc_pct":6.284050817981074,"final_pct":6.284050817981074,"text":"Altcoin maksimum 10-30% portofolio total, 3-5 posisi terkonsentrasi, tanpa leverage. Posisi ini dibatasi oleh skor dan aturan risiko 1%."},"verdict":{"score":7.1,"label":"WAIT","text":"Tesis layak dan harga sudah di/dekat zona, tetapi skor belum mencapai 7,5: ukuran posisi kecil atau tunggu konfirmasi struktur.","modules":{"narrative":8.0,"fundamentals":5.5,"tokenomics":8.8,"smart_money":8.0,"macro":5.0,"smc":7.0},"weights":{"narrative":0.2,"fundamentals":0.2,"tokenomics":0.15,"smart_money":0.15,"macro":0.1,"smc":0.2}},"data_gaps":["NVT on-chain tidak tersedia gratis untuk aset ini; memakai proxy volume bursa.","MVRV sejati tidak tersedia gratis; memakai proxy harga/VWAP 365 hari.","Alamat aktif tidak tersedia gratis; gunakan Token Terminal/Artemis untuk verifikasi.","Jadwal unlock 7-90 hari tidak ada di sumber gratis; isi unlocks.json dari TokenUnlocks/Tokenomist.","Daftar investor berasal dari pengetahuan umum; verifikasi di ChainBroker/Crunchbase.","Sikap The Fed dan likuiditas global belum diisi di macro.json."],"coverage":1.0,"sources":["CoinGecko","Binance/OKX (OHLCV)","DefiLlama","CoinMetrics Community (BTC/ETH)","alternative.me","Radar berita Crypto Sastra"]};/*DEMO_SCAN_END*/
+const fmtP=x=>x==null?'-':x>=1000?Number(x).toLocaleString('en-US',{maximumFractionDigits:0}):x>=100?Number(x).toFixed(2):x>=1?Number(x).toFixed(3):Number(x).toPrecision(4);
+const lblCls={ACCUMULATE:'bullish',WAIT:'netral',AVOID:'bearish',DISTRIBUTE:'bearish'};
+const lblTxt={ACCUMULATE:'Accumulate',WAIT:'Wait for FVG',AVOID:'Avoid',DISTRIBUTE:'Distribute'};
+const MOD=[['narrative','Narasi dan lifecycle','20%'],['fundamentals','On-chain dan fundamental','20%'],['tokenomics','Tokenomics','15%'],['smart_money','Smart money','15%'],['macro','Makro','10%'],['smc','Eksekusi SMC/ICT','20%']];
+const tonePill=t=>t==='good'?'bullish':t==='poor'?'bearish':'netral';
+function metricRow(label,o){
+  if(!o)return `<tr><td>${label}</td><td class="num">N/A</td><td class="mut">Tidak tersedia atau tidak berlaku</td></tr>`;
+  const v=o.value>=100?o.value.toFixed(0):o.value.toFixed(2);
+  return `<tr><td>${label}</td><td class="num">${v}</td><td><span class="pill ${tonePill(o.tone)}">${esc(o.verdict)}</span><div class="mut" style="font-size:12px;margin-top:4px">${esc(o.kind||o.source||'')}</div></td></tr>`}
+function renderScan(r){
+  const v=r.verdict,n=r.narrative,f=r.fundamentals,t=r.tokenomics,sm=r.smart_money,mc=r.macro,smc=r.smc,st=smc.setup||{},bb=r.barbell,lc=n.lifecycle;
+  const modBars=MOD.map(m=>`<div><span>${m[1]} (${m[2]})</span><b>${v.modules[m[0]].toFixed(1)}</b><i><u style="width:${v.modules[m[0]]*10}%"></u></i></div>`).join('');
+  const phase=[1,2,3,4].map(p=>`<div class="${lc.phase===p?'on':''}"><b>${p}</b>${['Akumulasi','Validasi','Euforia','Kelelahan'][p-1]}</div>`).join('');
+  const unl=t.unlocks&&t.unlocks.length?`<ul>${t.unlocks.map(u=>`<li><b class="mono">${esc(u.date)}</b> ${u.pct_circ!=null?'· '+u.pct_circ+'% suplai beredar ':''}${esc(u.note||'')}</li>`).join('')}</ul>`:'<p class="mut" style="margin:4px 0;font-size:14px">Tidak ada jadwal unlock 7-90 hari yang tercatat. Isi <span class="mono">unlocks.json</span> dari TokenUnlocks untuk memastikan.</p>';
+  const unlNews=(t.unlock_news||[]).length?`<ul>${t.unlock_news.map(u=>`<li>${esc(u.title)} <span class="mut">(${esc(u.source)})</span></li>`).join('')}</ul>`:'';
+  let ladder='';
+  if(st.zone){
+    const rows=[['Moonbag +100%: jual 50%',st.moonbag,'tgt'],['Target 2',st.t2,'tgt'],['Target 1 (swing high)',st.t1,'tgt'],['Harga sekarang',r.price,'now'],['Batas atas zona',st.zone[1],'zone'],['Entry (limit tengah zona)',st.entry,'zone'],['Batas bawah zona',st.zone[0],'zone'],['Invalidasi (stop struktural)',st.stop,'stp']].sort((a,b)=>b[1]-a[1]);
+    ladder=`<div class="ladder">${rows.map(x=>`<div class="${x[2]}"><span>${x[0]}</span><span class="p">${fmtP(x[1])}</span></div>`).join('')}</div>`}
+  const fv=(smc.fvgs||[]).length?`<ul>${smc.fvgs.map(g=>`<li>FVG bullish ${fmtP(g.lo)} sampai ${fmtP(g.hi)} (${esc(g.status)})</li>`).join('')}</ul>`:'<p class="mut" style="margin:4px 0;font-size:14px">Tidak ada FVG bullish terbuka di daily.</p>';
+  const liq=`<p style="margin:4px 0;font-size:14px">Likuiditas di atas (EQH): ${(smc.eqh||[]).map(fmtP).join(', ')||'tidak ada'}<br>Likuiditas di bawah (EQL): ${(smc.eql||[]).map(fmtP).join(', ')||'tidak ada'}</p>`;
+  const bbTxt=bb.final_pct>0?`Alokasi akhir <b>${bb.final_pct.toFixed(1)}%</b> portofolio (batas skor ${bb.alt_cap_pct}%, setara risiko 1% pada jarak stop ${st.stop_pct?st.stop_pct.toFixed(1):'-'}%).`:'Tidak ada alokasi baru untuk sekarang.';
+  const gaps=(r.data_gaps||[]).length?`<div class="gaps"><b>Keterbatasan data pada scan ini</b><ul>${r.data_gaps.map(g=>`<li>${esc(g)}</li>`).join('')}</ul></div>`:'';
+  return `<div class="verdict"><div class="vscore">${v.score.toFixed(1)}<small>/10</small></div><div style="min-width:0">
+    <h3>$${esc(r.symbol)} ${esc(r.name)} <span class="pill ${lblCls[v.label]}">${lblTxt[v.label]}</span>${r.demo?'<span class="tag demo">Contoh data sintetis</span>':''}</h3><p>${esc(v.text)}</p><div class="mods">${modBars}</div></div></div>
+  <div class="sgrid">
+   <div class="sc"><h3>1. Narasi dan lifecycle <em>${v.modules.narrative.toFixed(1)}/10</em></h3><p style="margin:0 0 6px;font-size:14px"><b>${esc(n.thesis)}</b></p><p class="mut" style="margin:0 0 8px;font-size:13.5px">${esc(n.filter)}</p>
+     <div class="phase" aria-label="Fase lifecycle">${phase}</div><p style="margin:0 0 6px;font-size:14px"><b>Fase ${lc.phase} (${esc(lc.label)}):</b> ${esc(lc.entry_quality)}.</p><ul>${lc.why.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+   <div class="sc"><h3>2. On-chain dan fundamental <em>${v.modules.fundamentals.toFixed(1)}/10</em></h3><div class="tablebox"><table><thead><tr><th>Metrik</th><th class="num">Nilai</th><th>Vonis</th></tr></thead><tbody>${metricRow('NVT',f.nvt)}${metricRow('MVRV',f.mvrv)}${metricRow('MC / TVL',f.tvl)}</tbody></table></div>
+     <div class="k">Pengguna dan pendapatan</div>${f.activity.length?`<ul>${f.activity.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="mut" style="margin:4px 0;font-size:14px">Tidak tersedia dari sumber gratis.</p>'}</div>
+   <div class="sc"><h3>3. Tokenomics dan suplai <em>${v.modules.tokenomics.toFixed(1)}/10</em></h3>
+     <p style="margin:0 0 6px;font-size:14px">Risiko FDV vs beredar: <span class="pill ${t.fdv_risk==='Tinggi'?'bearish':t.fdv_risk==='Sedang'?'netral':'bullish'}">${esc(t.fdv_risk)}</span> <span class="mono">${t.fdv_ratio?t.fdv_ratio.toFixed(2)+'x':'-'}</span>${t.circ_pct!=null?` · ${t.circ_pct.toFixed(0)}% suplai beredar`:''}</p><p class="mut" style="margin:0;font-size:13.5px">${esc(t.fdv_note)}</p>
+     <div class="k">Cliff unlock 7-90 hari</div>${unl}${unlNews}
+     <div class="k">Mekanisme deflasi</div><p style="margin:4px 0;font-size:14px"><b>${esc(t.deflation.status)}.</b> ${esc(t.deflation.note)}</p></div>
+   <div class="sc"><h3>4. Smart money dan makro <em>${((v.modules.smart_money+v.modules.macro)/2).toFixed(1)}/10</em></h3>
+     <div class="chips">${sm.backers.map(b=>`<span class="tag ${sm.tier1.includes(b)?'t1':''}">${esc(b)}</span>`).join('')||'<span class="mut" style="font-size:14px">Tanpa VC</span>'}</div>
+     <p style="margin:8px 0 4px;font-size:14px">${esc(sm.verdict)} <span class="mut">${esc(sm.note)}</span></p>${sm.playbook.length?`<ul>${sm.playbook.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+     <div class="k">Makro dan regulasi</div><ul>${mc.fng?`<li>Fear and Greed: ${mc.fng.value} (${esc(mc.fng.label)})</li>`:''}${mc.global?`<li>Dominasi BTC ${mc.global.btc_dom.toFixed(1)}%, kapitalisasi total ${mc.global.mcap_24h>=0?'+':''}${mc.global.mcap_24h.toFixed(1)}% 24 jam</li>`:''}<li>Radar 7 hari: ${mc.reg.pos} berita regulasi/ETF positif, ${mc.reg.neg} negatif</li><li>The Fed: ${esc(mc.fed)}</li></ul>
+     ${mc.tailwinds.length?`<div class="k">Angin searah</div><ul>${mc.tailwinds.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}${mc.headwinds.length?`<div class="k">Angin berlawanan</div><ul>${mc.headwinds.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</div>
+   <div class="sc full"><h3>5. Cetak biru eksekusi SMC/ICT <em>${v.modules.smc.toFixed(1)}/10</em></h3>
+     <div class="sgrid" style="gap:18px"><div><div class="k" style="margin-top:0">Bias HTF (weekly) dan LTF (daily)</div><ul><li><b>Weekly ${esc(smc.htf.bias)}:</b> ${esc(smc.htf.note)}</li><li><b>Daily ${esc(smc.ltf.bias)}:</b> ${esc(smc.ltf.note)}</li></ul>
+       <div class="k">FVG belum terisi</div>${fv}<div class="k">Peta likuiditas</div>${liq}
+       <div class="k">Status setup</div><p style="margin:4px 0;font-size:14px"><span class="pill ${st.valid?'bullish':'netral'}">${esc(st.status||'-')}</span> ${esc(st.label||'')}<br><span class="mut">${esc(st.reason||'')}</span></p>${st.rr?`<p class="mono" style="margin:4px 0;font-size:13px">RR ke target 1: ${st.rr.toFixed(1)}</p>`:''}</div>
+       <div>${ladder||'<div class="scanwait">Belum ada zona entry yang valid.</div>'}<div class="k">Barbell dan ukuran posisi</div><p style="margin:4px 0;font-size:14px">${esc(bb.text)}</p><p style="margin:4px 0;font-size:14px">${bbTxt}</p></div></div></div>
+  </div>${gaps}
+  <p class="mut" style="font-size:12.5px;margin:12px 0 0">Sumber: ${esc((r.sources||[]).join(', '))}. Dibuat ${ago(r.generated_at)}. Bukan nasihat keuangan: verifikasi data dan kelola risiko sendiri.</p>`;
+}
+let scanIdx=[];
+async function loadScan(sym){
+  const out=$('#scanOut');out.innerHTML='<div class="scanwait">Memindai $'+esc(sym)+'…</div>';
+  try{
+    const r=S.demo&&DEMO_SCAN&&sym===DEMO_SCAN.symbol?DEMO_SCAN:await getJSON('/api/scan?symbol='+encodeURIComponent(sym));
+    if(r.error)throw new Error(r.error);
+    out.innerHTML=renderScan(r);$('#scanMeta').textContent=r.demo?'data contoh':'diperbarui '+ago(r.generated_at);
+  }catch(e){out.innerHTML='<div class="scanwait">Scan $'+esc(sym)+' belum tersedia. Di mode GitHub, koin dipindai bergiliran (3 per siklus), coba lagi beberapa menit lagi.</div>';$('#scanMeta').textContent=''}
+}
+async function initScan(){
+  const sel=$('#scanSel');
+  try{scanIdx=(S.demo&&DEMO_SCAN)?[{symbol:DEMO_SCAN.symbol,name:DEMO_SCAN.name,score:DEMO_SCAN.verdict.score,label:DEMO_SCAN.verdict.label}]:await getJSON('/api/scan/index')}catch(e){scanIdx=[]}
+  if(!scanIdx.length){sel.innerHTML='<option>Belum ada</option>';$('#scanOut').innerHTML='<div class="scanwait">Belum ada hasil scan. Server menjalankan scan bergiliran setelah dinyalakan; di mode GitHub, 3 koin per siklus.</div>';return}
+  sel.innerHTML=scanIdx.map(e=>`<option value="${esc(e.symbol)}">${esc(e.symbol)} · ${e.score.toFixed(1)} · ${lblTxt[e.label]||e.label}</option>`).join('');
+  loadScan(scanIdx[0].symbol);
+}
+function openScan(sym){
+  const sel=$('#scanSel');
+  if([...sel.options].some(o=>o.value===sym)){sel.value=sym;loadScan(sym)}else toast('Scan $'+sym+' belum tersedia');
+  $('#scan').scrollIntoView({behavior:'smooth'});
+}
+$('#scanSel').onchange=e=>loadScan(e.target.value);
+
 /* ---------- interaksi ---------- */
 $$('.seg button').forEach(b=>b.onclick=()=>{S.dir=b.dataset.dir;$$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderFeed()});
 $('#fMin').onchange=e=>{S.min=+e.target.value;renderFeed()};
@@ -464,6 +581,8 @@ document.addEventListener('toggle',e=>{const d=e.target;if(d.tagName==='DETAILS'
 $('#feed').addEventListener('click',e=>{
   const w=e.target.closest('[data-watch]');
   if(w){const s=w.dataset.watch;watch.has(s)?watch.delete(s):watch.add(s);store.set('cs.watch',[...watch]);renderFeed();toast(watch.has(s)?'$'+s+' dipantau':'$'+s+' tidak dipantau');return}
+  const sc=e.target.closest('[data-scan]');
+  if(sc){openScan(sc.dataset.scan);return}
   const c=e.target.closest('[data-copy]');
   if(c){const i=S.items[c.dataset.copy];if(!i)return;
     const txt=`[${i.score}] ${i.direction.toUpperCase()} · ${i.event}\n${i.projects.map(p=>'$'+p).join(' ')}\n${i.title}\nSumber: ${i.source}${i.url&&i.url!=='#'?' '+i.url:''}\nLangkah: ${i.action[1]}\nExit: ${i.exit}\n(Bukan nasihat keuangan. Verifikasi sebelum bertindak.)`;
@@ -475,12 +594,13 @@ function copy(txt){
 }
 
 /* ---------- data live ---------- */
-const STATIC_MAP={'/api/news':'data/news.json','/api/top5':'data/top5.json','/api/predictions':'data/predictions.json','/api/stats':'data/stats.json','/api/prices':'data/prices.json'};
+const STATIC_MAP={'/api/news':'data/news.json','/api/top5':'data/top5.json','/api/predictions':'data/predictions.json','/api/stats':'data/stats.json','/api/prices':'data/prices.json','/api/scan/index':'data/scan/index.json'};
+const staticPath=u=>{if(STATIC_MAP[u])return STATIC_MAP[u];const m=u.match(/^\/api\/scan\?symbol=([A-Z0-9]+)/);if(m)return 'data/scan/'+m[1]+'.json';throw new Error('unknown')};
 const fj=u=>fetch(u,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
 /* Server live: /api/*. Hosting statis (GitHub Pages): data/*.json yang diperbarui GitHub Actions. */
 const getJSON=async u=>{
   if(!S.static){try{return await fj(u)}catch(e){}}
-  const r=await fj(STATIC_MAP[u]);S.static=true;return r};
+  const r=await fj(staticPath(u));S.static=true;return r};
 async function loadSide(){
   try{
     const [t,p,st,pr]=await Promise.all([getJSON('/api/top5'),getJSON('/api/predictions'),getJSON('/api/stats'),getJSON('/api/prices')]);
@@ -511,9 +631,9 @@ async function init(){
   if(!live){S.demo=true;S.items=demoItems();S.stats=DEMO_STATS;
     S.prices={PEPE:{usd:103.4},BTC:{usd:102.1},BNB:{usd:101.1}};
     S.top=calcTop(Object.values(S.items));S.pred=calcPred(Object.values(S.items));
-    setLive('demo','pratinjau');$('#banner').hidden=false;$('#foot').textContent='mode pratinjau';renderAll();return}
+    setLive('demo','pratinjau');$('#banner').hidden=false;$('#foot').textContent='mode pratinjau';renderAll();initScan();return}
   if(S.demo){$('#banner').hidden=false}
-  renderAll();await loadSide();
+  renderAll();await loadSide();initScan();
   if(S.static){
     setLive(S.demo?'demo':'on','data diperbarui berkala');
     setInterval(refreshStatic,60000);return}

@@ -1,0 +1,3 @@
+{
+  "_petunjuk": "Isi jadwal unlock 7-90 hari ke depan dari TokenUnlocks/Tokenomist. Format per simbol: [{\"date\":\"2026-12-01\",\"pct_circ\":2.5,\"note\":\"Cliff investor awal\"}]. Entri tanggal lampau diabaikan."
+}
