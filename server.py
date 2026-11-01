@@ -504,12 +504,38 @@ def stats_api():
              "avg_alpha_pct": round(s.get("sum_alpha", s["sum_ret"]) / s["n"], 2) if s["n"] else None,
              "weight_multiplier": event_multiplier(e), "calibrated": s["n"] >= MIN_SAMPLES} for e, s in STATS.items()]
 
+HUNT_SCAN = int(os.getenv("HUNT_SCAN", "2"))     # kandidat Hunter yang dioper ke Scan SMC per siklus
+
+def hunt_handoff(res, load=None, dump=None):
+    """Serah-terima: kandidat Hunter teratas (belum viral, punya pool DEX) dipindai SMC/FVG/OTE dengan candle dari pool DEX-nya."""
+    if not (scan and hunter and res and res.get("candidates")): return
+    idx = {e["symbol"]: e for e in (load("scan/index.json", []) if load else [])}
+    macro = None; done = 0
+    for c in hunter.handoff(res, 8):
+        if done >= HUNT_SCAN: break
+        sym = c["symbol"]
+        if sym in scan.COINS and sym not in scan.DYN: continue          # koin tetap Scan sudah punya jalurnya sendiri
+        last = idx.get(sym, {}).get("generated_at") or (SCANS.get(sym) or {}).get("generated_at", 0)
+        if time.time() - last < 6 * 3600: continue
+        tag = (c.get("sector") or {}).get("tag") or "sektor tidak diketahui"
+        scan.COINS[sym] = {"cg": c["id"], "name": c["name"], "narr": f"{tag} (ditemukan Hunter, skor {c['score']:.0f}/100, narasi {c['narrative_score']}/100)"}
+        scan.DYN[sym] = c["scan_ref"]; done += 1
+        try:
+            macro = macro or scan.fetch_macro()
+            r = scan.scan_symbol(sym, None, list(NEWS.values()), macro)
+            if dump:
+                os.makedirs(os.path.join(os.getenv("DATA_DIR", "data"), "scan"), exist_ok=True)
+                dump(f"scan/{sym}.json", r); idx[sym] = scan.index_entry(r)
+            else: SCANS[sym] = r
+        except Exception as e: print(f"handoff scan {sym} gagal: {e}")
+    if dump and idx: dump("scan/index.json", sorted(idx.values(), key=lambda e: e["symbol"]))
+
 def hunt_loop():
     """Mode server: jalankan Hunter berulang tiap HUNT_EVERY_MIN menit (default 55)."""
     while True:
         try:
-            r = hunter.hunt()
-            if r["candidates"]: HUNT.clear(); HUNT.update(r)
+            r = hunter.hunt(news=list(NEWS.values()), prev=HUNT or None)
+            if r["candidates"]: HUNT.clear(); HUNT.update(r); hunt_handoff(r)
         except Exception as e: print("hunter gagal:", e)
         time.sleep(hunter.HUNT_EVERY)
 
@@ -576,7 +602,9 @@ def once():
         try: scan_rotation(d, load, dump)
         except Exception as e: print("scan rotasi gagal:", e)
     if hunter:
-        try: hunter.run(load, dump)
+        try:
+            res = hunter.run(load, dump, news=list(NEWS.values()))
+            hunt_handoff(res, load, dump)
         except Exception as e: print("hunter gagal:", e)
     print(f"siklus selesai: {len(items)} berita, {len(PRICES)} harga, bootstrap={BOOTSTRAP}, alert_terkirim={len(ALERT_LOG)}")
 

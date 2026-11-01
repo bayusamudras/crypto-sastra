@@ -1,3 +1,4 @@
 {
-  "_petunjuk": "Isi jadwal unlock 7-90 hari ke depan dari TokenUnlocks/Tokenomist. Format per simbol: [{\"date\":\"2026-12-01\",\"pct_circ\":2.5,\"note\":\"Cliff investor awal\"}]. Entri tanggal lampau diabaikan."
+  "_petunjuk": "Isi jadwal unlock 7-90 hari ke depan dari TokenUnlocks/Tokenomist. Format per simbol: [{\"date\":\"2026-12-01\",\"pct_circ\":2.5,\"note\":\"Cliff investor awal\"}]. Entri tanggal lampau diabaikan. Simbol yang tidak tercatat dianggap 'tidak diketahui', bukan 'aman'.",
+  "LIT": [{"date": "2026-12-27", "pct_circ": 200, "note": "Cliff tim dan investor: 500 jt LIT (data Tokenomist per 17 Jul 2026)"}]
 }

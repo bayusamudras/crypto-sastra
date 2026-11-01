@@ -1,0 +1,8 @@
+{
+  "_petunjuk": "Katalis roadmap yang Anda verifikasi sendiri. Format: {\"symbol\":\"XYZ\",\"date\":\"2026-11-20\",\"type\":\"Mainnet|Testnet insentif|Rebrand|Listing|Unlock\",\"polarity\":1,\"note\":\"...\",\"source\":\"URL\"}. polarity 1 = positif, -1 = negatif. Katalis positif <=14 hari memberi +10 poin, <=30 hari +8; katalis negatif <=45 hari mengurangi 10.",
+  "events": [
+    {"symbol": "LIT", "date": "2026-12-27", "type": "Unlock (cliff 1 tahun)", "polarity": -1,
+     "note": "500 jt LIT (tim 26% + investor 24%) mulai vesting linear 3 tahun; 2x suplai beredar saat ini.",
+     "source": "https://tokenomist.ai/research/lighter-lit-tokenomics-robinhood-hype-a-real-burn-and-the-december-2026-cliff-2"}
+  ]
+}

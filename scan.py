@@ -94,8 +94,32 @@ def fetch_markets(symbols=None):
     by = {r["id"]: r for r in rows}
     return {s: by.get(COINS[s]["cg"]) for s in (symbols or COINS)}
 
+DYN = {}   # koin dinamis dari Hunter: simbol -> {"chain", "pool"}; candle diambil dari pool DEX (GeckoTerminal), bukan bursa terpusat
+GT_NET = {"ethereum": "eth", "solana": "solana", "base": "base", "arbitrum": "arbitrum", "bsc": "bsc", "polygon": "polygon_pos", "avalanche": "avax", "optimism": "optimism"}
+_GT = {}
+
+def fetch_candles_gt(sym, interval):
+    """OHLCV harian dari pool DEX terbesar (GeckoTerminal); mingguan = gabungan 7 hari. Urut lama ke baru."""
+    ref = DYN[sym]; net = GT_NET.get(ref["chain"])
+    if not net: return []
+    key = (sym, ref["pool"])
+    if key not in _GT or time.time() - _GT[key][0] > 900:
+        d = jget(f"https://api.geckoterminal.com/api/v2/networks/{net}/pools/{ref['pool']}/ohlcv/day?aggregate=1&limit=1000&currency=usd", 25)
+        lst = d["data"]["attributes"]["ohlcv_list"]
+        _GT[key] = (time.time(), [{"t": int(a[0]) * 1000, "o": float(a[1]), "h": float(a[2]), "l": float(a[3]), "c": float(a[4]), "v": float(a[5])} for a in reversed(lst)])
+    daily = _GT[key][1]
+    if interval == "1d": return daily
+    w = []
+    for i in range(len(daily) % 7, len(daily) - 6, 7):
+        g = daily[i:i + 7]
+        w.append({"t": g[0]["t"], "o": g[0]["o"], "h": max(x["h"] for x in g), "l": min(x["l"] for x in g), "c": g[-1]["c"], "v": sum(x["v"] for x in g)})
+    return w
+
 def fetch_candles(sym, interval):
     """OHLCV tertutup+berjalan, urut lama ke baru. Binance (endpoint data publik) lalu OKX sebagai cadangan."""
+    if sym in DYN:
+        try: return fetch_candles_gt(sym, interval)
+        except Exception as e: print(f"candle DEX {sym} gagal: {e}"); return []
     for base in ("https://data-api.binance.vision", "https://api.binance.com"):
         try:
             arr = jget(f"{base}/api/v3/klines?symbol={sym}USDT&interval={interval}&limit=400")

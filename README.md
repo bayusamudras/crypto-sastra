@@ -24,6 +24,17 @@ Dockerfile, docker-compose.yml, render.yaml, Procfile, .env.example   berkas dep
 4. **Skor** 0-100 = valuasi 30 + suplai 15 + diskon ATH 10 + likuiditas 10 + fase 10 + senyap 25, plus/minus insight analis (maks 8). Checklist tesis Kalimasada menandai tiap kriteria lolos, gagal, atau tidak diketahui.
 5. `hunt_seed.json` memuat riset manual dan catatan analis bertanggal. Tambahkan sendiri. Isi `unlocks.json` agar cek unlock 90 hari terisi.
 
+### Narrative Engine (`narrative.py`)
+Hunter bekerja top-down lalu bottom-up:
+1. **Sektor**: protokol DefiLlama dijumlahkan per sektor; kecepatan TVL 7 hari dan 30 hari dibandingkan dengan harga koin sektor (divergensi = uang masuk, harga belum). Sektor tanpa TVL (AI, DePIN, ZK) hanya terbaca dari kategori CoinGecko. Sektor usang (yield/farm/algo-stable) dikenai penalti 10.
+2. **Narrative Score** per koin = TVL_Velocity 40 + Volume_Anomaly 30 + Dev_Activity 20 + Social_Velocity 10. Komponen yang tidak diketahui dihitung netral 30 dan menurunkan "keyakinan data".
+3. **Anomali volume**: DexScreener (volume, likuiditas, beli/jual 24 jam). Vol/MC ≥ 20% dengan harga datar = pola akumulasi. Dompet segar tidak tersedia gratis; rasio beli/jual dipakai sebagai proksi.
+4. **Developer**: commit 4 minggu dari CoinGecko. Tanpa commit, tanpa pendapatan, umur > 1 tahun = indikasi proyek mati (penalti 15, tier "lemah").
+5. **Early-stage** (< 1 tahun, belum ada pendapatan): valuasi memakai FDV vs median rekan sektor dan aktivitas developer.
+6. **Katalis**: `catalysts.json` (manual) dan berita radar 72 jam. Katalis positif ≤ 14 hari +10, ≤ 30 hari +8; katalis negatif (mis. cliff unlock) ≤ 45 hari −10.
+7. **Serah-terima**: kandidat bersih teratas dipindai di Scan SMC memakai candle pool DEX (GeckoTerminal) bila tersedia ≥ 40 minggu data (`HUNT_SCAN`, default 2 per siklus).
+Skor akhir = 0,7 × skor dasar + 0,3 × Narrative + katalis − penalti.
+
 Reddit sering menolak IP datacenter (termasuk GitHub Actions). Bila gagal, Hunter menandai sumber sosial tidak terjangkau dan menilai "senyap" netral, bukan menebak. Hasil di GitHub: `data/hunt.json`, diperbarui tiap sekitar 55 menit.
 
 ## Jalankan lokal
