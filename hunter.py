@@ -457,8 +457,9 @@ def run(load, dump, force=False, news=()):
     prev = load("hunt.json", None)
     if prev and not force and time.time() - prev.get("generated_at", 0) < HUNT_EVERY: return prev
     res = hunt(news=news, prev=prev)
-    if not res["candidates"] and prev:       # sumber gagal: pertahankan hasil lama, jangan menimpanya dengan kosong
+    if not res["candidates"] and prev and prev.get("candidates"):       # sumber gagal: pertahankan hasil lama, jangan menimpanya dengan kosong
         print("hunter: tanpa kandidat, hasil lama dipertahankan"); return prev
+    if not res["candidates"]: print("hunter: tanpa kandidat; status sumber ditulis agar website menjelaskan penyebabnya:", res["sources"])
     dump("hunt.json", res)
     return res
 
