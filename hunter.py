@@ -19,6 +19,7 @@ MC_MIN = float(os.getenv("HUNT_MC_MIN", "15e6"))
 MC_MAX = float(os.getenv("HUNT_MC_MAX", "400e6"))
 VOL_MIN = float(os.getenv("HUNT_VOL_MIN", "300000"))
 PAGES = int(os.getenv("HUNT_PAGES", "3"))
+SCHEMA = 2     # naikkan bila format hunt.json berubah: hasil lama dengan skema berbeda dihitung ulang, bukan dipakai
 HUNT_EVERY = int(os.getenv("HUNT_EVERY_MIN", "55")) * 60
 X_BEARER = os.getenv("X_BEARER_TOKEN", "")
 X_ANALYSTS = [h.strip().lstrip("@") for h in os.getenv("X_ANALYSTS", "").split(",") if h.strip()]  # akun yang Anda percaya
@@ -436,7 +437,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
             "Katalis roadmap diisi manual di catatan catalysts.json atau terdeteksi dari berita radar 72 jam terakhir."]
     if not rows: gaps.append("DefiLlama tidak terjangkau: sektor dan TVL velocity tidak dihitung (nilai netral).")
     if not n_det and cands: gaps.append("Detail CoinGecko (umur, commit developer, alamat kontrak) tidak terjangkau: komponen dev dan DEX netral.")
-    return {"generated_at": int(now), "mode": "live", "universe": len(universe), "filtered": len(cands), "enriched": n_det,
+    return {"schema": SCHEMA, "generated_at": int(now), "mode": "live", "universe": len(universe), "filtered": len(cands), "enriched": n_det,
             "filters": {"mc_min": MC_MIN, "mc_max": MC_MAX, "vol_min": VOL_MIN},
             "sources": {"coingecko": bool(universe), "defillama": bool(rows or protocols), "reddit": rs, "x": xs, "trending": len(trending), "posts": len(posts), "tweets": len(tweets), "dexscreener": any(c["dex"] for c in cands)},
             "sectors": [{k: v for k, v in s.items()} for s in sectors[:16]], "top_narratives": hot,
@@ -455,6 +456,7 @@ def empty():
 def run(load, dump, force=False, news=()):
     """Mode Actions: jalankan bila hasil terakhir lebih tua dari HUNT_EVERY. Riwayat buzz/commit ikut disimpan (untuk kecepatan sosial dan tren developer)."""
     prev = load("hunt.json", None)
+    if prev and prev.get("schema") != SCHEMA: print("hunter: skema hasil lama berbeda, dihitung ulang"); prev = None
     if prev and not force and time.time() - prev.get("generated_at", 0) < HUNT_EVERY: return prev
     res = hunt(news=news, prev=prev)
     if not res["candidates"] and prev and prev.get("candidates"):       # sumber gagal: pertahankan hasil lama, jangan menimpanya dengan kosong

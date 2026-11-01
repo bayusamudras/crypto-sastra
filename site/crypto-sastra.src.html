@@ -682,12 +682,12 @@ function hCard(c,i){
     <div class="mt"><span>Market cap</span><b>${fU(c.mc)}</b></div>
     <div class="mt"><span>${v[0]}</span><b>${v[1]}</b></div>
     <div class="mt"><span>FDV / MC</span><b>${c.fdv_mc!=null?c.fdv_mc.toFixed(2):'-'}</b></div>
-    <div class="sg">${Math.round(c.score)}<small>narasi ${c.narrative_score}</small></div>
+    <div class="sg">${Math.round(c.score)}<small>narasi ${c.narrative_score!=null?c.narrative_score:'-'}</small></div>
     <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
   </summary><div class="hbody">
     <div><h4>Rincian skor</h4>${bars}</div>
     <div><h4>Checklist tesis Kalimasada</h4>${ck}</div>
-    <div><h4>Narrative Score ${c.narrative_score}/100 · keyakinan data ${Math.round((c.narrative_conf||0)*100)}%</h4>${nbars}<p style="margin:8px 0 0;font-size:13.5px;color:var(--mut)">Skor dasar ${c.hunter_score}${c.bonus?` (insight analis ${c.bonus>0?'+':''}${c.bonus})`:''}${c.penalty?`, penalti −${c.penalty}`:''}.</p></div>
+    <div><h4>Narrative Score ${c.narrative_score!=null?c.narrative_score:'-'}/100 · keyakinan data ${Math.round((c.narrative_conf||0)*100)}%</h4>${nbars}<p style="margin:8px 0 0;font-size:13.5px;color:var(--mut)">Skor dasar ${c.hunter_score!=null?c.hunter_score:Math.round(c.score)}${c.bonus?` (insight analis ${c.bonus>0?'+':''}${c.bonus})`:''}${c.penalty?`, penalti −${c.penalty}`:''}.</p></div>
     <div><h4>Aliran dana, katalis, dan eksekusi</h4><p style="margin:0 0 8px;font-size:14px">${dx}</p>${cats}${scanBox}</div>
     <div><h4>Mengapa menarik</h4>${c.notes.length?`<ul>${c.notes.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="mut" style="margin:0;font-size:14px">Tidak ada keunggulan menonjol yang terukur.</p>'}
       <h4 style="margin-top:14px">Risiko</h4>${c.risks.length?`<ul>${c.risks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="mut" style="margin:0;font-size:14px">Tidak ada bendera merah otomatis. Tetap cek unlock dan backer.</p>'}</div>
@@ -698,7 +698,7 @@ function hCard(c,i){
 function renderHunt(){
   const d=H.data;if(!d)return;
   let a=(d.candidates||[]).filter(c=>(!H.tier||c.tier===H.tier)&&(!H.quiet||!c.viral)&&(!H.hot||(c.sector&&c.sector.hot)));
-  const key={score:c=>-c.score,mc:c=>c.mc,ps:c=>c.ps==null?1e9:c.ps,quiet:c=>(c.buzz&&c.buzz.weight||0)+(c.viral?100:0),narr:c=>-c.narrative_score}[H.sort];
+  const key={score:c=>-c.score,mc:c=>c.mc,ps:c=>c.ps==null?1e9:c.ps,quiet:c=>(c.buzz&&c.buzz.weight||0)+(c.viral?100:0),narr:c=>-(c.narrative_score||0)}[H.sort];
   a=a.slice().sort((x,y)=>key(x)-key(y));
   const pr=(d.candidates||[]).filter(c=>c.tier==='prioritas').length,sr=d.sources||{};
   const social=(sr.reddit&&sr.reddit.ok?1:0)+(sr.x&&sr.x.ok?1:0);

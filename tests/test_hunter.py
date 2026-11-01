@@ -158,3 +158,12 @@ def test_dex_candles_feed_scan(monkeypatch):
         assert 0 <= r["verdict"]["score"] <= 10 and r["symbol"] == "DEXC"
     finally:
         scan.COINS.pop("DEXC", None); scan.DYN.pop("DEXC", None); scan._GT.clear()
+
+def test_old_schema_is_recomputed(monkeypatch):
+    calls = []
+    monkeypatch.setattr(hunter, "hunt", lambda **kw: calls.append(1) or {"schema": hunter.SCHEMA, "candidates": [{"x": 1}], "sources": {}, "generated_at": 1})
+    fresh_old = {"generated_at": time.time(), "candidates": [{"y": 1}]}        # baru dibuat tetapi tanpa skema
+    out = hunter.run(lambda n, d: fresh_old, lambda n, o: None)
+    assert calls and out["schema"] == hunter.SCHEMA
+    calls.clear(); cur = {"schema": hunter.SCHEMA, "generated_at": time.time(), "candidates": [{"y": 1}]}
+    assert hunter.run(lambda n, d: cur, lambda n, o: None) is cur and not calls
