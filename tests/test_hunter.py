@@ -167,3 +167,44 @@ def test_old_schema_is_recomputed(monkeypatch):
     assert calls and out["schema"] == hunter.SCHEMA
     calls.clear(); cur = {"schema": hunter.SCHEMA, "generated_at": time.time(), "candidates": [{"y": 1}]}
     assert hunter.run(lambda n, d: cur, lambda n, o: None) is cur and not calls
+
+# ---------------------------------------------------------------- Fundamental & Pendapatan
+def test_fundamental_components_and_normalisation():
+    f, comp, conf, _ = hunter.fundamental_score(4.0, None, .35, .8, None)
+    assert comp == {"pe": 100, "usage": 100, "buyback": 100} and f == 100 and conf == 1.0
+    f, comp, conf, _ = hunter.fundamental_score(40, None, None, None, None)      # hanya P/E diketahui: dinormalkan, keyakinan 0,4
+    assert comp == {"pe": 25} and f == 25 and conf == .4
+    assert hunter.fundamental_score(None, None, None, None, None)[0] is None
+    f, comp, _, _ = hunter.fundamental_score(None, 8.0, None, 0.0, None)          # fee tanpa pendapatan: P/F; pendapatan ada tapi 0% ke holder
+    assert comp["pe"] == 85 and comp["buyback"] == 15
+    f, comp, _, n = hunter.fundamental_score(20, None, None, None, {"model": "buyback", "pct": 80})
+    assert comp["buyback"] == 100 and "buyback.json" in n["buyback"]
+    assert hunter.fundamental_score(20, None, None, None, {"model": "burn", "pct": None})[1]["buyback"] == 60
+
+def test_final_formula_prefers_revenue_over_narrative():
+    # dua koin identik kecuali pendapatan: yang punya P/E murah + buyback harus menang walau narasinya sama
+    cheap = coin("rich", "RICH", "Richcoin", 100e6); poor = coin("poor", "POOR", "Poorcoin", 100e6)
+    pr = {"rich": {"tvl": 0, "slug": "rich", "category": "Lending"}, "poor": {"tvl": 0, "slug": "poor", "category": "Lending"}}
+    r = hunter.hunt([cheap, poor], pr, {"rich": 2e6, "poor": 0.01e6}, {"rich": 2e6, "poor": 0.01e6}, set(), [], [], now=time.time(), details={}, dex={}, cg_cats=[], proto_rows=[])
+    d = {c["symbol"]: c for c in r["candidates"]}
+    assert d["RICH"]["fundamental_score"] > d["POOR"]["fundamental_score"]
+    assert d["RICH"]["score"] > d["POOR"]["score"]
+
+def test_unknown_fundamental_is_neutral_30_and_formula_weights():
+    c = coin("x", "X", "Xcoin", 100e6)
+    s = hunter.score_candidate(c, None, None, None, None, False, True)
+    assert s["fundamental_score"] is None
+    assert s["score"] == max(0, min(100, round(.5 * s["hunter_score"] + .3 * 30 + .2 * s["narrative_score"]) + s["catalyst_pts"] - s["penalty"]))
+
+def test_growth_and_payout_from_fee_trend():
+    c = coin("g", "G", "Gcoin", 100e6)
+    s = hunter.score_candidate(c, None, 1.0e6, 1.0e6, None, False, True, extra={"rev7": 0.35e6, "holders": 0.6e6})
+    # 0.35e6 * 30/7 = 1.5e6 vs 1.0e6 => +50%; payout 60%
+    assert round(s["growth"], 2) == .5 and round(s["payout"], 2) == .6 and s["fundamental"]["usage"] == 100 and s["fundamental"]["buyback"] == 100
+
+def test_buyback_json_flows_into_candidate(monkeypatch):
+    orig = hunter.scan._load_json
+    monkeypatch.setattr(hunter.scan, "_load_json", lambda n, d: {"events": [{"symbol": "GOOD", "model": "buyback", "pct": 70, "note": "uji", "source": "u"}]} if n == "buyback.json" else orig(n, d))
+    r = hunter.hunt(U, PROTO, REV, {}, set(), [], [], now=time.time(), details={}, dex={}, cg_cats=[], proto_rows=[])
+    g = next(c for c in r["candidates"] if c["symbol"] == "GOOD")
+    assert g["buyback"]["pct"] == 70 and g["fundamental"]["buyback"] == 100

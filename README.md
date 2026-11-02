@@ -33,7 +33,10 @@ Hunter bekerja top-down lalu bottom-up:
 5. **Early-stage** (< 1 tahun, belum ada pendapatan): valuasi memakai FDV vs median rekan sektor dan aktivitas developer.
 6. **Katalis**: `catalysts.json` (manual) dan berita radar 72 jam. Katalis positif ≤ 14 hari +10, ≤ 30 hari +8; katalis negatif (mis. cliff unlock) ≤ 45 hari −10.
 7. **Serah-terima**: kandidat bersih teratas dipindai di Scan SMC memakai candle pool DEX (GeckoTerminal) bila tersedia ≥ 40 minggu data (`HUNT_SCAN`, default 2 per siklus).
-Skor akhir = 0,7 × skor dasar + 0,3 × Narrative + katalis − penalti.
+### Fundamental & Pendapatan (tesis "token = saham")
+Komponen ke-3 dengan bobot lebih besar daripada narasi: **P/E** (market cap / pendapatan tahunan, atau P/F dari fee bila pendapatan tak ada) 40 + **pertumbuhan penggunaan** 30 + **buyback / bagi hasil ke holder** 30. Pertumbuhan memakai tren fee 7 hari vs 30 hari sebagai proksi (DAU tidak tersedia gratis). Bagi hasil dihitung otomatis dari pendapatan-holder DefiLlama dan digabung dengan `buyback.json` (model resmi yang Anda verifikasi). Komponen tak diketahui diabaikan dan sisanya dinormalkan; tanpa data sama sekali dihitung netral 30.
+
+**Skor akhir = 0,5 × dasar + 0,3 × Fundamental + 0,2 × Narrative + katalis − penalti.** Catatan: dasar sudah memuat nilai valuasi P/E 30 poin, jadi P/E efektif berbobot sekitar 27% dari skor akhir (sengaja, mengikuti tesis).
 
 Reddit sering menolak IP datacenter (termasuk GitHub Actions). Bila gagal, Hunter menandai sumber sosial tidak terjangkau dan menilai "senyap" netral, bukan menebak. Hasil di GitHub: `data/hunt.json`, diperbarui tiap sekitar 55 menit.
 

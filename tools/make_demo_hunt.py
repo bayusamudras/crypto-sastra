@@ -34,12 +34,14 @@ DEX = {"contoh-c": {"chain": "ethereum", "vol24": 1.9e6, "liq": 4.1e6, "buys": 6
        "contoh-h": {"chain": "solana", "vol24": 15e6, "liq": 3.2e6, "buys": 5400, "sells": 3100, "pool": "0xdemo3", "pairs": 2}}
 NEWS = [{"projects": ["CNTF"], "event": "Upgrade / Mainnet", "published": time.time() - 7200, "title": "Contoh RWA umumkan mainnet v2 bulan ini", "url": "https://example.invalid/news"}]
 REV = {"contoh-a": 1.4e6, "contoh-b": 1.1e6, "contoh-c": 0.55e6, "contoh-e": 0.02e6, "contoh-f": 0.8e6}
+REV7 = {"contoh-a": 0.42e6, "contoh-b": 0.22e6, "contoh-c": 0.12e6, "contoh-e": 0.004e6, "contoh-f": 0.28e6}
+HOLD = {"contoh-a": 1.0e6, "contoh-b": 0.1e6, "contoh-c": 0.0, "contoh-f": 0.5e6}
 POSTS = [{"sub": "CryptoCurrency", "title": "$CNTD Contoh Meme to the moon", "text": "", "score": 2500, "comments": 600, "url": "https://example.invalid/post", "created": 0}] * 5
 POSTS += [{"sub": "defi", "title": "DD: Contoh Lending is undervalued, revenue and buyback", "text": "$CNTA accumulating", "score": 12, "comments": 3, "url": "https://example.invalid/dd", "created": 0}]
-r = hunter.hunt(U, PROTO, REV, REV, set(), POSTS, [], now=time.time(), proto_rows=ROWS, cg_cats=CATS, details=DET, dex=DEX, news=NEWS)
+r = hunter.hunt(U, PROTO, REV, REV, set(), POSTS, [], now=time.time(), proto_rows=ROWS, cg_cats=CATS, details=DET, dex=DEX, news=NEWS, rev7=REV7, fees7=REV7, holders=HOLD)
 r["demo"] = True; r["analyst_notes"] = r.get("analyst_notes", []); r["sources"]["x"] = {"ok": 0, "fail": 0, "off": True}
 txt = json.dumps(r, ensure_ascii=False, separators=(",", ":"))
 p = os.path.join(root, "site", "crypto-sastra.src.html"); s = open(p, encoding="utf-8").read()
 s = re.sub(r"/\*DEMO_HUNT_START\*/.*?/\*DEMO_HUNT_END\*/", lambda m: "/*DEMO_HUNT_START*/const DEMO_HUNT=" + txt + ";/*DEMO_HUNT_END*/", s, flags=re.S)
 open(p, "w", encoding="utf-8").write(s)
-print("demo hunt:", [(c["symbol"], round(c["score"]), c["narrative_score"], c["tier"], c["viral"], c["ghost"], c["early"]) for c in r["candidates"]], r["top_narratives"])
+print("demo hunt:", [(c["symbol"], round(c["score"]), c["narrative_score"], c["tier"], c["viral"], c["ghost"], c["early"], c["fundamental_score"]) for c in r["candidates"]], r["top_narratives"])

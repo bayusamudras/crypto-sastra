@@ -19,7 +19,7 @@ MC_MIN = float(os.getenv("HUNT_MC_MIN", "15e6"))
 MC_MAX = float(os.getenv("HUNT_MC_MAX", "400e6"))
 VOL_MIN = float(os.getenv("HUNT_VOL_MIN", "300000"))
 PAGES = int(os.getenv("HUNT_PAGES", "3"))
-SCHEMA = 2     # naikkan bila format hunt.json berubah: hasil lama dengan skema berbeda dihitung ulang, bukan dipakai
+SCHEMA = 3     # naikkan bila format hunt.json berubah: hasil lama dengan skema berbeda dihitung ulang, bukan dipakai
 HUNT_EVERY = int(os.getenv("HUNT_EVERY_MIN", "55")) * 60
 X_BEARER = os.getenv("X_BEARER_TOKEN", "")
 X_ANALYSTS = [h.strip().lstrip("@") for h in os.getenv("X_ANALYSTS", "").split(",") if h.strip()]  # akun yang Anda percaya
@@ -84,6 +84,14 @@ def fetch_fees(kind):
     except Exception as e:
         print(f"hunter: DefiLlama {kind} gagal:", e); return {}
     return {(p.get("slug") or p.get("name", "")).lower(): p.get("total30d") for p in d.get("protocols", []) if p.get("total30d") is not None}
+
+def fetch_fee_detail(kind):
+    """slug -> {"d30","d7"} (USD) untuk dailyFees / dailyRevenue / dailyHoldersRevenue."""
+    try:
+        d = jget("https://api.llama.fi/overview/fees?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=" + kind, timeout=40)
+    except Exception as e:
+        print(f"hunter: DefiLlama {kind} gagal:", e); return {}
+    return {(p.get("slug") or p.get("name", "")).lower(): {"d30": p.get("total30d"), "d7": p.get("total7d")} for p in d.get("protocols", []) if p.get("total30d") is not None}
 
 # ---------------------------------------------------------------- radar sosial
 def _rss_posts(sub):
@@ -202,6 +210,32 @@ def _unlocks(sym, now):
         if 0 <= ts - now <= 90 * 86400: out.append(r)
     return out
 
+def fundamental_score(ps, pf, growth, payout, cur):
+    """Fundamental & Pendapatan 0-100 (seperti menilai saham): P/E 40 + pertumbuhan penggunaan 30 + buyback/bagi hasil 30.
+    Komponen tak diketahui diabaikan dan bobot sisanya dinormalkan; keyakinan = bobot yang diketahui. -> (skor atau None, komponen, keyakinan, catatan)"""
+    comp, note = {}, {}
+    mult, lbl = (ps, "P/E (MC / pendapatan tahunan)") if ps is not None else (pf, "P/F (MC / fee tahunan)")
+    if mult is not None:
+        comp["pe"] = 100 if mult <= 5 else 85 if mult <= 10 else 70 if mult <= 15 else 50 if mult <= 25 else 25 if mult <= 50 else 5
+        note["pe"] = f"{lbl} {mult:.1f}x"
+    if growth is not None:
+        comp["usage"] = 100 if growth >= .30 else 75 if growth >= .10 else 50 if growth >= -.10 else 25 if growth >= -.30 else 5
+        note["usage"] = f"fee 7 hari (disetahunkan) {growth*100:+.0f}% vs rata-rata 30 hari (proksi penggunaan; DAU tidak tersedia gratis)"
+    auto = None
+    if payout is not None:
+        auto = 100 if payout >= .5 else 75 if payout >= .2 else 50 if payout > 0 else 15
+        note["buyback"] = f"{payout*100:.0f}% pendapatan mengalir ke holder (DefiLlama)"
+    man = None
+    if cur:
+        pct = cur.get("pct"); mdl = cur.get("model")
+        man = 100 if (pct is not None and pct >= 50) else 75 if (pct is not None or mdl in ("buyback", "dividend")) else 60
+        note["buyback"] = (note.get("buyback", "") + "; " if "buyback" in note else "") + f"{mdl}" + (f" {pct:.0f}% pendapatan" if pct is not None else "") + " (buyback.json)"
+    if auto is not None or man is not None: comp["buyback"] = max(x for x in (auto, man) if x is not None)
+    W = {"pe": .4, "usage": .3, "buyback": .3}
+    known = sum(W[k] for k in comp)
+    if not known: return None, comp, 0.0, note
+    return round(sum(comp[k] * W[k] for k in comp) / known), comp, round(known, 2), note
+
 BUZZ0 = 10.0   # bobot sosial ~ "sudah ramai"
 
 def score_candidate(c, info, rev30, fees30, buzz, trending, social_ok, now=None, unlocks=None, extra=None):
@@ -290,6 +324,13 @@ def score_candidate(c, info, rev30, fees30, buzz, trending, social_ok, now=None,
     va, vnote = narrative.volume_anomaly(dex["vol24"] if dexok else vol, mc, ch7, dex.get("buys") if dexok else None, dex.get("sells") if dexok else None, dex=dexok)
     soc, snote = narrative.social_velocity(b, ex.get("w_prev"), viral)
     nscore, nconf, ncomp = narrative.narrative_score(sector, va, dsc, soc)
+    fees_y = (fees30 or 0) * 12
+    pf = (mc / fees_y) if (fees_y > 0 and mc) else None
+    g7 = ex.get("rev7") if ex.get("rev7") is not None else ex.get("fees7")
+    base30 = rev30 if (rev30 and rev30 > 0) else fees30
+    growth = ((g7 * 30 / 7) / base30 - 1) if (g7 is not None and base30 and base30 > 0) else None
+    hold = ex.get("holders"); payout = (hold / rev30) if (hold is not None and rev30 and rev30 > 0) else None
+    fscore, fcomp, fconf, fnote = fundamental_score(ps, pf, growth, payout, ex.get("buyback"))
     legacy = bool(sector and sector.get("legacy")) or ex.get("legacy", False)
     ghost = False
     if det and det.get("commits4w") == 0 and age is not None and age > 365 and ps is None and (mc_tvl is None or mc_tvl > 1): ghost = True
@@ -298,7 +339,8 @@ def score_candidate(c, info, rev30, fees30, buzz, trending, social_ok, now=None,
     penalty = (10 if legacy else 0) + (15 if ghost else 0)
     if legacy: risks.append("Sektor usang (yield/farm/algo-stable): senyap di sini biasanya berarti ditinggalkan, bukan tersembunyi")
     if ghost: risks.append("Indikasi proyek mati: tanpa commit developer, tanpa pendapatan, dan likuiditas/harga runtuh")
-    total = max(0, min(100, round(.7 * base + .3 * nscore) + cat_pts - penalty))
+    fval = fscore if fscore is not None else 30        # tanpa data pendapatan: nilai netral 30 (lebih rendah dari rata-rata, bukan hukuman penuh)
+    total = max(0, min(100, round(.5 * base + .3 * fval + .2 * nscore) + cat_pts - penalty))
     for c_ in cat:
         if c_["polarity"] < 0: risks.append(f"Katalis negatif {c_['date']}: {c_['note']}")
         else: notes.append(f"Katalis {c_['date']} ({c_['type']}): {c_['note']}")
@@ -317,10 +359,13 @@ def score_candidate(c, info, rev30, fees30, buzz, trending, social_ok, now=None,
         chk("Developer aktif", None if dsc is None else dsc >= 40, dnote),
         chk("Anomali volume (akumulasi tersembunyi)", None if va is None else va >= 60, vnote),
         chk("Katalis dalam 30 hari", None if (det is None and not cat) else any(x["polarity"] > 0 and x["days"] <= 30 for x in cat), "; ".join(f"{x['type']} {x['date']}" for x in cat) or "tidak ada katalis tercatat (isi catalysts.json)"),
+        chk("Buyback / bagi hasil ke holder", None if "buyback" not in fcomp else fcomp["buyback"] >= 75, fnote.get("buyback", "tidak ada data (isi buyback.json)")),
+        chk("Pendapatan stabil atau tumbuh", None if growth is None else growth >= -.10, fnote.get("usage", "tren fee tidak tersedia")),
         chk("Backer Tier-1 ≥ 3", None if tier1 is None else len(tier1) >= 3, "data investor perlu verifikasi manual" if tier1 is None else ", ".join(tier1) or "tidak ada"),
     ]
     known = [x for x in checklist if x["status"] != "unknown"]
-    return {"score": total, "hunter_score": base, "narrative_score": nscore, "narrative_conf": nconf, "narrative": ncomp, "narrative_notes": {"volume": vnote, "dev": dnote, "social": snote},
+    return {"score": total, "hunter_score": base, "fundamental_score": fscore, "fundamental": fcomp, "fundamental_conf": fconf, "fundamental_notes": fnote,
+            "pf": pf, "growth": growth, "payout": payout, "buyback": ex.get("buyback"), "narrative_score": nscore, "narrative_conf": nconf, "narrative": ncomp, "narrative_notes": {"volume": vnote, "dev": dnote, "social": snote},
             "ghost": ghost, "legacy": legacy, "early": early, "catalysts": cat, "catalyst_pts": cat_pts, "penalty": penalty, "bonus": bonus, "parts": {k: {"pts": v[0], "max": v[1], "note": v[2]} for k, v in parts.items()},
             "checklist": checklist, "pass": sum(1 for x in known if x["status"] == "pass"), "known": len(known), "total": len(checklist),
             "viral": bool(viral), "notes": notes, "risks": risks, "ps": ps, "mc_tvl": mc_tvl, "fdv_mc": r, "dd": dd, "vol_mc": vm}
@@ -351,12 +396,19 @@ def index_protocols(rows):
     return out
 
 def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, posts=None, tweets=None, now=None, top=40,
-         proto_rows=None, cg_cats=None, details=None, dex=None, news=(), prev=None, enrich_n=ENRICH_N):
+         proto_rows=None, cg_cats=None, details=None, dex=None, news=(), prev=None, enrich_n=ENRICH_N, rev7=None, fees7=None, holders=None):
     now = now or time.time()
     universe = universe if universe is not None else fetch_universe()
     rows = proto_rows if proto_rows is not None else (fetch_proto_rows() if protocols is None else [])
     protocols = protocols if protocols is not None else index_protocols(rows)
-    rev = rev if rev is not None else fetch_fees("dailyRevenue"); fees = fees if fees is not None else fetch_fees("dailyFees")
+    live_rev = rev is None                      # data pendapatan diambil live dari DefiLlama (tes menyuntikkan sendiri)
+    if rev is None:
+        dr = fetch_fee_detail("dailyRevenue"); rev = {k: v["d30"] for k, v in dr.items()}; rev7 = {k: v["d7"] for k, v in dr.items()}
+    if fees is None:
+        df = fetch_fee_detail("dailyFees"); fees = {k: v["d30"] for k, v in df.items()}; fees7 = {k: v["d7"] for k, v in df.items()}
+    if live_rev:
+        dh = fetch_fee_detail("dailyHoldersRevenue"); holders = {k: v["d30"] for k, v in dh.items()}
+    bb = {e["symbol"].upper(): e for e in scan._load_json("buyback.json", {}).get("events", [])}
     trending = trending if trending is not None else fetch_trending()
     if posts is None: posts, rs = fetch_reddit()
     else: rs = {"ok": 1, "fail": 0}
@@ -385,6 +437,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
         tag = narrative.sector_of((info or {}).get("category"))[0] if info else None
         base_rows.append({"c": c, "info": info, "sym": sym, "slug": slug, "tag": tag,
                           "rv": rev.get(slug.lower()) if info else None, "fe": fees.get(slug.lower()) if info else None,
+                          "rv7": (rev7 or {}).get(slug.lower()) if info else None, "fe7": (fees7 or {}).get(slug.lower()) if info else None, "hold": (holders or {}).get(slug.lower()) if info else None,
                           "unl": _unlocks(sym, now), "cats": narrative.catalysts_for(sym, now, news)})
     def score(r, det=None, dx=None):
         c = r["c"]; tag = r["tag"]; legacy = False
@@ -395,7 +448,8 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
         if sector is None and tag and tag != "Tanpa sektor":
             sector = {"tag": tag, "legacy": narrative.sector_of(None, [tag])[1] or tag.endswith("(usang)"), "tvl_ch7": None}
         h = hist.get(c["id"], {})
-        ex = {"detail": det, "dex": dx, "sector": sector, "peer_med_fdv": med.get(tag), "prev_commits": h.get("commits"), "w_prev": h.get("w"), "catalysts": r["cats"]}
+        ex = {"detail": det, "dex": dx, "sector": sector, "peer_med_fdv": med.get(tag), "prev_commits": h.get("commits"), "w_prev": h.get("w"), "catalysts": r["cats"],
+              "rev7": r["rv7"], "fees7": r["fe7"], "holders": r["hold"], "buyback": bb.get(r["sym"])}
         s = score_candidate(c, r["info"], r["rv"], r["fe"], mentions.get(c["id"]), c["id"] in trending, social_ok, now, r["unl"], ex)
         return s, tag, sector
     for r in base_rows: r["s"], r["tag_f"], r["sector"] = score(r)
@@ -422,7 +476,8 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
             "chg7": c.get("price_change_percentage_7d_in_currency"), "chg30": c.get("price_change_percentage_30d_in_currency"),
             "ath_dd": s["dd"], "tvl": (r["info"] or {}).get("tvl"), "category": (r["info"] or {}).get("category"), "chains": (r["info"] or {}).get("chains"),
             "rev30": r["rv"], "fees30": r["fe"], "ps": s["ps"], "mc_tvl": s["mc_tvl"], "fdv_mc": s["fdv_mc"], "vol_mc": s["vol_mc"],
-            "score": s["score"], "hunter_score": s["hunter_score"], "narrative_score": s["narrative_score"], "narrative_conf": s["narrative_conf"],
+            "score": s["score"], "hunter_score": s["hunter_score"], "fundamental_score": s["fundamental_score"], "fundamental": s["fundamental"], "fundamental_conf": s["fundamental_conf"],
+            "fundamental_notes": s["fundamental_notes"], "pf": s["pf"], "growth": s["growth"], "payout": s["payout"], "buyback": s["buyback"], "narrative_score": s["narrative_score"], "narrative_conf": s["narrative_conf"],
             "narrative": s["narrative"], "narrative_notes": s["narrative_notes"], "bonus": s["bonus"], "penalty": s["penalty"],
             "parts": s["parts"], "checklist": s["checklist"], "pass": s["pass"], "known": s["known"], "total": s["total"],
             "tier": tier_label(s["score"], s["pass"], s["known"], s["ghost"], s["legacy"], s["narrative_conf"]),
@@ -436,7 +491,8 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
             "manual": manual.get(r["sym"]),
             "links": {"coingecko": "https://www.coingecko.com/en/coins/" + c["id"], "defillama": ("https://defillama.com/protocol/" + r["slug"]) if r["slug"] else None}})
     cands.sort(key=lambda x: -x["score"])
-    gaps = ["Dompet segar / smart money tidak tersedia gratis: akumulasi diproksikan dari rasio beli/jual DEX 24 jam (DexScreener).",
+    gaps = ["DAU / wallet aktif tidak tersedia gratis: pertumbuhan penggunaan diproksikan dari tren fee 7 hari vs 30 hari (DefiLlama). Buyback otomatis hanya dari rasio pendapatan-holder; model resmi diisi di buyback.json.",
+            "Dompet segar / smart money tidak tersedia gratis: akumulasi diproksikan dari rasio beli/jual DEX 24 jam (DexScreener).",
             "Jadwal unlock dan backer Tier-1 tetap manual (unlocks.json, scan.py); isi sebelum mengambil keputusan.",
             "Katalis roadmap diisi manual di catatan catalysts.json atau terdeteksi dari berita radar 72 jam terakhir."]
     if not rows: gaps.append("DefiLlama tidak terjangkau: sektor dan TVL velocity tidak dihitung (nilai netral).")
