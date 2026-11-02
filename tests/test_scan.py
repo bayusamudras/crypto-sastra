@@ -83,3 +83,33 @@ if __name__ == "__main__":
     print(json.dumps({k: r[k] for k in ("verdict", "barbell")}, indent=1)[:900])
     print("phase", r["narrative"]["lifecycle"]["phase"], r["narrative"]["lifecycle"]["label"], "| htf", r["smc"]["htf"]["bias"], "| ltf", r["smc"]["ltf"]["bias"])
     print("setup", {k: (round(v, 2) if isinstance(v, float) else v) for k, v in (r["smc"]["setup"] or {}).items() if k != "zone"}, "zone", [round(x, 2) for x in (r["smc"]["setup"].get("zone") or [])])
+
+def _c(o, h, l, c): return {"o": o, "h": h, "l": l, "c": c, "v": 1}
+
+def test_order_block_detected_and_mitigation():
+    base = [_c(100, 100.6, 99.4, 100.2 if i % 2 else 99.9) for i in range(20)]
+    ob_c = _c(100, 100.5, 97.5, 98)                    # candle turun terakhir
+    disp = _c(98, 107, 97.9, 106)                      # displacement: body 8 >> rata-rata body, close > high OB
+    after = [_c(106, 107, 105, 106) for _ in range(5)]
+    obs = scan.order_blocks(base + [ob_c, disp] + after)
+    assert len(obs) == 1 and obs[0]["lo"] == 97.5 and obs[0]["hi"] == 100.5 and obs[0]["status"] == "belum tersentuh"
+    touched = scan.order_blocks(base + [ob_c, disp] + after + [_c(106, 106, 100, 101)])
+    assert touched[0]["status"] == "sebagian"
+    broken = scan.order_blocks(base + [ob_c, disp] + after + [_c(106, 106, 96, 97)])
+    assert broken[0]["status"] == "terpakai"
+    assert scan.order_blocks(base + after) == []        # tanpa displacement tidak ada OB
+
+def test_liquidity_sweep_requires_close_back_inside():
+    c = [_c(100, 101, 99, 100) for _ in range(40)]
+    c[-3] = _c(100, 100.5, 97, 99.5)                    # wick di bawah 98, close kembali di atas
+    sw = [("L", 10, 98.0), ("H", 12, 101.5)]
+    z = scan.liquidity_sweeps(c, sw)
+    assert len(z) == 1 and z[0]["side"] == "bull" and z[0]["bars_ago"] == 2
+    c[-3] = _c(100, 100.5, 97, 97.5)                    # close tetap di bawah level: breakdown, bukan sweep
+    assert scan.liquidity_sweeps(c, sw) == []
+    c[-2] = _c(100, 102.5, 99.5, 101)                   # sweep sisi atas (buy-side)
+    assert scan.liquidity_sweeps(c, sw)[0]["side"] == "bear"
+
+def test_scan_exposes_obs_and_sweeps():
+    r = run()
+    assert "obs" in r["smc"] and "sweeps" in r["smc"]

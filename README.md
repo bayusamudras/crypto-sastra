@@ -37,6 +37,12 @@ Skor akhir = 0,7 × skor dasar + 0,3 × Narrative + katalis − penalti.
 
 Reddit sering menolak IP datacenter (termasuk GitHub Actions). Bila gagal, Hunter menandai sumber sosial tidak terjangkau dan menilai "senyap" netral, bukan menebak. Hasil di GitHub: `data/hunt.json`, diperbarui tiap sekitar 55 menit.
 
+## Scan SMC: komponen yang dideteksi
+Struktur swing (BOS/CHoCH), Fair Value Gap, Order Block bullish (candle turun terakhir sebelum displacement; status belum tersentuh/sebagian/terpakai), Liquidity Sweep (wick menembus swing high/low lalu close kembali), equal highs/lows, dan OTE Fib 0,62-0,79. Order Block yang bertumpuk dengan OTE membentuk setup A+ (konfluensi). Semua dihitung di backend dari candle OHLCV (Binance/OKX, atau pool DEX untuk koin kecil).
+
+## Status error di website
+Pemuatan data punya batas waktu 12 detik. Bila gagal, muncul bilah pemberitahuan dengan alasannya (timeout, 404, 429) dan tombol "Coba lagi". Data berita lebih dari 30 menit ditandai basi, hasil Hunter lebih dari 3 jam ditandai basi, dan alasan kegagalan sumber (mis. batas API X habis) tampil di panel Status sumber. Website menyegarkan diri saat tab dibuka kembali.
+
 ## Jalankan lokal
 ```bash
 python3 server.py            # Python 3.9+, tanpa dependensi

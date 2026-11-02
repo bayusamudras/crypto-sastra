@@ -241,6 +241,31 @@ def fvgs(c, lookback=150, min_pct=0.003):
             out.append({"type": "bear", "lo": lo, "hi": hi, "i": i, "status": st})
     return out
 
+def order_blocks(c, a=None, lookback=150):
+    """Bullish order block: candle turun terakhir sebelum displacement naik (body >= 1,5x rata-rata body 14 candle) yang menutup di atas high-nya.
+    Status: belum tersentuh / sebagian (harga kembali masuk zona) / terpakai (low jatuh menembus dasar zona, tidak dipakai)."""
+    out, n, seen = [], len(c), set()
+    for k in range(max(15, n - lookback), n - 1):          # k = candle displacement bullish
+        x = c[k]; avg = mean(abs(y["c"] - y["o"]) for y in c[k - 14:k]) or 1e-12
+        if not (x["c"] > x["o"] and (x["c"] - x["o"]) >= 1.5 * avg): continue
+        j = next((j for j in range(k - 1, max(k - 4, 0), -1) if c[j]["c"] < c[j]["o"]), None)   # candle turun terakhir sebelum displacement
+        if j is None or j in seen or x["c"] <= c[j]["h"]: continue
+        seen.add(j); b = c[j]; later = c[k + 1:]
+        st = "terpakai" if any(y["l"] < b["l"] for y in later) else "sebagian" if any(y["l"] <= b["h"] for y in later) else "belum tersentuh"
+        out.append({"lo": b["l"], "hi": b["h"], "i": j, "status": st})
+    return out
+
+def liquidity_sweeps(c, sw, within=30):
+    """Sweep: wick menembus swing low/high lalu close kembali di sisi semula dalam `within` candle terakhir.
+    bull = likuiditas sell-side diambil (sering mendahului pembalikan naik); bear = likuiditas buy-side diambil."""
+    out, n = [], len(c)
+    for kind, idx, price in sw:
+        for j in range(max(idx + 2, n - within), n):
+            x = c[j]
+            if kind == "L" and x["l"] < price < x["c"]: out.append({"side": "bull", "level": price, "i": j, "bars_ago": n - 1 - j}); break
+            if kind == "H" and x["h"] > price > x["c"]: out.append({"side": "bear", "level": price, "i": j, "bars_ago": n - 1 - j}); break
+    return sorted(out, key=lambda z: z["bars_ago"])[:4]
+
 def equal_levels(sw, kind, tol=0.004):
     pts = sorted(s[2] for s in sw if s[0] == kind); groups = []
     for p in pts:
@@ -256,6 +281,9 @@ def smc_setup(daily, weekly):
     out = {"htf": {k: w[k] for k in ("bias", "note", "swing_high", "swing_low")}, "ltf": {k: d[k] for k in ("bias", "note", "swing_high", "swing_low")},
            "eqh": [x for x in equal_levels(d["swings"], "H") if x > last][:3], "eql": [x for x in equal_levels(d["swings"], "L") if x < last][-3:],
            "fvgs": sorted(bull_open, key=lambda f: abs(f["hi"] - last))[:4], "ote": None, "setup": None, "atr": a}
+    obs = [o for o in order_blocks(daily, a) if o["status"] != "terpakai"]
+    out["obs"] = sorted(obs, key=lambda o: abs((o["lo"] + o["hi"]) / 2 - last))[:3]
+    out["sweeps"] = liquidity_sweeps(daily, d["swings"])
     # leg impuls: swing low terakhir sebelum swing high terakhir, puncak = max high sesudah swing low itu
     n = len(daily)
     all_h = [x for x in d["swings"] if x[0] == "H" and x[1] >= n - 180]; all_l = [x for x in d["swings"] if x[0] == "L"]
@@ -280,6 +308,11 @@ def smc_setup(daily, weekly):
         lo, hi = max(f["lo"], ote["lo"]), min(f["hi"], ote["hi"])
         if lo < hi and f["lo"] >= leg["low"]:
             zone, label = (lo, hi), "Konfluensi FVG + OTE (setup A+)"; break
+    if not label.startswith("Konfluensi"):
+        for o in sorted(out["obs"], key=lambda o: -o["i"]):
+            lo, hi = max(o["lo"], ote["lo"]), min(o["hi"], ote["hi"])
+            if lo < hi and o["lo"] >= leg["low"]:
+                zone, label = (lo, hi), "Konfluensi Order Block + OTE (setup A+)"; break
     entry = (zone[0] + zone[1]) / 2; stop = leg["low"] - 0.5 * a
     stop = min(stop, zone[0] - 0.25 * a)
     risk = entry - stop

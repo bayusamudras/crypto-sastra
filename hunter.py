@@ -95,15 +95,19 @@ def _rss_posts(sub):
         out.append({"sub": sub, "title": title, "text": "", "score": 1, "comments": 0, "url": link.get("href") if link is not None else "", "created": time.time()})
     return out
 
+def _why(e):
+    code = getattr(e, "code", None)
+    return "batas pemakaian API tercapai (429)" if code == 429 else f"akses ditolak ({code})" if code in (401, 403) else f"HTTP {code}" if code else "tidak terjangkau/timeout"
+
 def fetch_reddit(subs=SUBS):
-    posts, ok, fail = [], 0, 0
+    posts, ok, fail, why = [], 0, 0, {}
     for sub in subs:
         got = None
         for host in ("www.reddit.com", "old.reddit.com"):
             try:
                 d = jget(f"https://{host}/r/{sub}/top.json?t=week&limit=100"); got = d["data"]["children"]; break
-            except Exception:
-                continue
+            except Exception as e:
+                why[_why(e)] = why.get(_why(e), 0) + 1; continue
         if got is not None:
             for c in got:
                 p = c["data"]
@@ -115,7 +119,7 @@ def fetch_reddit(subs=SUBS):
             try: posts += _rss_posts(sub); ok += 1
             except Exception: fail += 1
         time.sleep(1.2)
-    return posts, {"ok": ok, "fail": fail}
+    return posts, {"ok": ok, "fail": fail, "why": why}
 
 def fetch_x():
     """Tweet ber-cashtag dari pencarian 'undervalued' dan dari akun analis pilihan Anda. Perlu X_BEARER_TOKEN (X API v2)."""
@@ -124,7 +128,7 @@ def fetch_x():
     queries = [('(undervalued OR underrated OR "hidden gem" OR "under the radar" OR accumulating) (altcoin OR crypto OR token) -is:retweet lang:en has:cashtags', False)]
     if X_ANALYSTS:
         queries.append(("(" + " OR ".join("from:" + h for h in X_ANALYSTS[:20]) + ") has:cashtags -is:retweet", True))
-    tweets, ok, fail = [], 0, 0
+    tweets, ok, fail, why = [], 0, 0, None
     for q, analyst in queries:
         url = ("https://api.twitter.com/2/tweets/search/recent?max_results=100&expansions=author_id&tweet.fields=public_metrics,entities,created_at"
                "&user.fields=public_metrics,username&query=" + urllib.parse.quote(q))
@@ -137,8 +141,8 @@ def fetch_x():
                                "user": u.get("username", ""), "analyst": analyst, "url": f"https://x.com/{u.get('username','i')}/status/{t.get('id')}"})
             ok += 1
         except Exception as e:
-            print("hunter: X gagal:", e); fail += 1
-    return tweets, {"ok": ok, "fail": fail}
+            print("hunter: X gagal:", e); fail += 1; why = _why(e)
+    return tweets, {"ok": ok, "fail": fail, "why": why if fail else None}
 
 def sentiment(text):
     t = text.lower()
