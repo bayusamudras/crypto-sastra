@@ -1,59 +1,47 @@
 name: Kumpulkan berita
 
-# Menjalankan Crypto Sastra tanpa server: tiap ~5 menit mengumpulkan berita, menilai, mengukur hasil,
-# mengirim alert Telegram, lalu menerbitkan website + data ke branch gh-pages (GitHub Pages).
+# Pengumpul berkelanjutan. Jadwal cron GitHub tidak bisa diandalkan (bisa tertunda berjam-jam), jadi:
+#   1. satu job menjalankan siklus tiap ~3 menit selama ~5 jam 40 menit (tools/loop.sh),
+#   2. di akhir, job memanggil workflow ini lagi (workflow_dispatch) sehingga rantai tidak putus,
+#   3. cron tiap 15 menit hanya jaga-jaga untuk menghidupkan kembali rantai bila terputus.
+# Data JSON masuk ke branch `data` (tidak memicu build Pages); gh-pages hanya didorong bila index.html berubah
+# atau tiap 30 menit sebagai salinan cadangan.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: collect
-  cancel-in-progress: false
+  cancel-in-progress: false      # run baru menunggu giliran, tidak memotong siklus yang sedang berjalan
 
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 355
     steps:
       - uses: actions/checkout@v4
 
-      - name: Muat data sebelumnya
+      - name: Jalankan siklus berulang
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          rm -rf out
-          git clone --quiet --depth 1 --branch gh-pages "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" out 2>/dev/null || mkdir -p out
-
-      - name: Jalankan satu siklus
-        env:
-          DATA_DIR: out/data
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          X_ANALYSTS: ${{ secrets.X_ANALYSTS }}
           CRYPTOPANIC_KEY: ${{ secrets.CRYPTOPANIC_KEY }}
           ALERT_MIN_SCORE: "70"
-        run: python3 server.py --once
+          LOOP_SECONDS: "20400"
+          LOOP_INTERVAL: "180"
+        run: bash tools/loop.sh
 
-      - name: Terbitkan ke gh-pages
+      - name: Sambung ke run berikutnya
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          cp static/index.html out/index.html
-          touch out/.nojekyll
-          cd out
-          [ -d .git ] || { git init -q -b gh-pages; git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"; }
-          git config user.name "crypto-sastra-bot"
-          git config user.email "bot@users.noreply.github.com"
-          git config commit.gpgsign false
-          git add -A
-          if git rev-parse -q --verify HEAD >/dev/null; then
-            git commit -q --amend -m "data $(date -u +%FT%TZ)"
-          else
-            git commit -q -m "data $(date -u +%FT%TZ)"
-          fi
-          git push -q --force origin gh-pages
+        run: gh workflow run collect.yml --ref "${GITHUB_REF_NAME}" || echo "tidak bisa memanggil ulang; cron akan menghidupkan kembali"

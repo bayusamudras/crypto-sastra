@@ -786,12 +786,17 @@ $('#noticeBtn').onclick=()=>{if(noticeFn)noticeFn()};
 function checkStale(genAt){
   if(!S.static||S.demo||!genAt)return;
   const m=(now()-genAt)/60;
-  if(m>30)setNotice('Data berita terakhir diperbarui '+ago(genAt)+'. Workflow GitHub mungkin terlambat atau berhenti; cek tab Actions di repo.','stale',refreshStatic);
+  if(m>20)setNotice('Data berita terakhir diperbarui '+ago(genAt)+'. Workflow GitHub mungkin terlambat atau berhenti; cek tab Actions di repo.','stale',refreshStatic);
   else setNotice('')}
 /* Server live: /api/*. Hosting statis (GitHub Pages): data/*.json yang diperbarui GitHub Actions. */
+/* Data statis: di github.io dibaca dari branch `data` lewat raw.githubusercontent.com (cepat, tanpa build Pages), lalu salinan cadangan di situs. */
+const DATA_BASES=(()=>{const b=[],m=location.hostname.match(/^([^.]+)\.github\.io$/),repo=location.pathname.split('/')[1];
+  if(m&&repo)b.push('https://raw.githubusercontent.com/'+m[1]+'/'+repo+'/data/');b.push('');return b})();
+const fjs=async p=>{let last;const t=Math.floor(Date.now()/60000);
+  for(const base of DATA_BASES){try{return await fj(base+p+(base?'?_='+t:''))}catch(e){last=e}}throw last};
 const getJSON=async u=>{
   if(!S.static){try{return await fj(u)}catch(e){}}
-  const r=await fj(staticPath(u));S.static=true;return r};
+  const r=await fjs(staticPath(u));S.static=true;return r};
 async function loadSide(){
   try{
     const [t,p,st,pr]=await Promise.all([getJSON('/api/top5'),getJSON('/api/predictions'),getJSON('/api/stats'),getJSON('/api/prices')]);
@@ -809,7 +814,7 @@ function footTxt(r){
   $('#foot').textContent=S.static?(r.sources+' sumber · diperbarui '+(r.generated_at?ago(r.generated_at):'-')):(r.sources+' sumber · aktif '+Math.round((r.uptime||0)/60)+' mnt')}
 async function refreshStatic(){
   try{
-    const r=await fj(STATIC_MAP['/api/news']);
+    const r=await fjs(STATIC_MAP['/api/news']);
     (r.items||[]).forEach(i=>{const isNew=!S.items[i.id];S.items[i.id]=i;if(isNew&&S.genAt&&i.score>=70){if(sound)beep();if(notif){try{new Notification(`[${i.score}] ${i.direction.toUpperCase()} ${i.projects.join(', ')}`,{body:i.title})}catch(e){}}}});
     S.genAt=r.generated_at||S.genAt;footTxt(r);renderStats();renderFeed();await loadSide();checkStale(S.genAt);
   }catch(e){setNotice('Gagal menyegarkan data: '+why(e)+'. Menampilkan data terakhir yang sudah dimuat.','err',refreshStatic)}

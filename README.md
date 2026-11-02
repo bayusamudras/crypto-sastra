@@ -10,7 +10,7 @@ scan.py                    mesin Scan Institusional (6 modul + SMC/ICT)
 unlocks.json, macro.json   input manual untuk modul 3 dan 5
 tests/                     uji mesin scan (python3 tests/test_scan.py)
 server.py                  backend: pengumpul berita, analisis, harga, kalibrasi, alert Telegram, API + SSE; --once = satu siklus untuk Actions
-.github/workflows/collect.yml  jadwal GitHub Actions (cron 5 menit) yang menerbitkan ke gh-pages
+.github/workflows/collect.yml  GitHub Actions: loop siklus ~3 menit (tools/loop.sh) yang memanggil dirinya lagi; data ke branch `data`, situs ke gh-pages
 static/index.html          website (hasil build, dilayani server)
 site/crypto-sastra.src.html sumber website (edit di sini, lalu jalankan: python3 build.py)
 Dockerfile, docker-compose.yml, render.yaml, Procfile, .env.example   berkas deploy
@@ -75,7 +75,7 @@ dan `macro.json` (sikap The Fed) agar modul 3 dan 5 lengkap. Mode server meminda
 mode GitHub memindai `SCAN_PER_RUN` (default 3) koin tertua tiap siklus. Uji mesin scan: `python3 tests/test_scan.py`.
 
 ## Hosting gratis dari GitHub (tanpa server, tanpa domain berbayar)
-Website di **GitHub Pages**, pengumpul berita di **GitHub Actions** (`.github/workflows/collect.yml`, jalan tiap ~5 menit).
+Website di **GitHub Pages**, pengumpul berita di **GitHub Actions** (`.github/workflows/collect.yml`, siklus tiap ~3 menit lewat rantai job yang saling memanggil).
 Alamatnya `https://<username>.github.io/crypto-sastra/`.
 
 1. **Jadikan repo Public** (Settings → General → Danger Zone → Change visibility). Pages di akun gratis hanya untuk repo publik,
@@ -85,10 +85,14 @@ Alamatnya `https://<username>.github.io/crypto-sastra/`.
 3. **Jalankan pertama kali**: tab Actions → "Kumpulkan berita" → Run workflow. Ini membuat branch `gh-pages`.
 4. **Aktifkan Pages**: Settings → Pages → Source: *Deploy from a branch* → Branch `gh-pages` / `/ (root)` → Save.
 
-Cara kerjanya: tiap siklus memuat data sebelumnya dari `gh-pages`, mengumpulkan berita, mengukur hasil harga, mengirim alert, lalu
-menimpa `gh-pages` dengan satu commit (riwayat tidak membengkak). Run pertama tidak mengirim alert agar backlog tidak membanjiri Telegram.
+Cara kerjanya: satu job menjalankan siklus tiap 3 menit selama 5 jam 40 menit (`tools/loop.sh`), lalu memanggil workflow ini lagi lewat
+`workflow_dispatch` sehingga rantainya tidak putus. Cron tiap 15 menit hanya penjaga yang menghidupkan kembali rantai bila terputus. Alasannya:
+jadwal cron GitHub bisa tertunda berjam-jam. Data JSON didorong ke branch **`data`** (satu commit yang ditimpa); website di github.io membacanya
+lewat `raw.githubusercontent.com` (repo harus **publik**), sehingga tidak memicu build Pages (batas sekitar 10 build per jam). Branch `gh-pages`
+hanya didorong bila `index.html` berubah atau tiap 30 menit sebagai salinan cadangan. Run pertama tidak mengirim alert agar backlog tidak membanjiri Telegram.
+Atur `LOOP_INTERVAL` (detik) di workflow bila ingin lebih jarang. Bila rantai terputus, jalankan manual: tab Actions → "Kumpulkan berita" → Run workflow.
 
-Batasan mode ini: bukan realtime. Jadwal cron GitHub minimal 5 menit dan sering tertunda beberapa menit saat ramai, jadi waktu deteksi
+Batasan mode ini: bukan realtime. Siklus tiap 3 menit ditambah lama satu siklus, jadi waktu deteksi
 lebih lambat daripada server sendiri. Workflow terjadwal bisa dinonaktifkan GitHub bila repo tidak ada aktivitas lama (cek tab Actions
 dan aktifkan kembali). Untuk deteksi detik demi detik, jalankan `server.py` di VPS.
 
