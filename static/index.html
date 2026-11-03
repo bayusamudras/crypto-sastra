@@ -327,7 +327,7 @@ footer p{margin:0;max-width:78ch}
       <button data-tier="pantau" aria-pressed="false">Pantau</button>
     </div>
     <label class="sr" for="hSort">Urutan</label>
-    <select class="field" id="hSort"><option value="score">Skor tertinggi</option><option value="mc">Market cap terkecil</option><option value="ps">Termurah vs pendapatan</option><option value="quiet">Paling senyap</option><option value="narr">Narrative Score</option><option value="fund">Fundamental &amp; pendapatan</option></select>
+    <select class="field" id="hSort"><option value="score">Skor tertinggi</option><option value="conv">Keyakinan Master Agent</option><option value="mc">Market cap terkecil</option><option value="ps">Termurah vs pendapatan</option><option value="quiet">Paling senyap</option><option value="narr">Narrative Score</option><option value="fund">Fundamental &amp; pendapatan</option></select>
     <label class="chk"><input type="checkbox" id="hQuiet" checked> Sembunyikan yang sudah viral</label>
     <label class="chk"><input type="checkbox" id="hHot"> Hanya narasi utama</label>
     <label class="chk"><input type="checkbox" id="hRev"> Hanya yang berpendapatan</label>
@@ -339,6 +339,7 @@ footer p{margin:0;max-width:78ch}
     <section class="panel" id="hManual"></section>
     <section class="panel" id="hAnalyst"></section>
     <section class="panel" id="hSrc"></section>
+    <section class="panel" id="hLearn"></section>
   </div>
 </section>
 
@@ -700,7 +701,7 @@ function hCard(c,i){
     <div class="mt"><span>Market cap</span><b>${fU(c.mc)}</b></div>
     <div class="mt"><span>${v[0]}</span><b>${v[1]}</b></div>
     <div class="mt"><span>FDV / MC</span><b>${c.fdv_mc!=null?c.fdv_mc.toFixed(2):'-'}</b></div>
-    <div class="sg">${Math.round(c.score)}<small>fund. ${c.fundamental_score!=null?c.fundamental_score:'-'} · narasi ${c.narrative_score!=null?c.narrative_score:'-'}</small></div>
+    <div class="sg">${Math.round(c.score)}<small>fund. ${c.fundamental_score!=null?c.fundamental_score:'-'} · narasi ${c.narrative_score!=null?c.narrative_score:'-'}${c.conviction?' · yakin '+c.conviction.conviction:''}</small></div>
     <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
   </summary><div class="hbody">
     <div><h4>Rincian skor</h4>${bars}</div>
@@ -708,16 +709,39 @@ function hCard(c,i){
     <div><h4>Fundamental &amp; pendapatan ${c.fundamental_score!=null?c.fundamental_score:'n/a'}/100 · keyakinan data ${Math.round((c.fundamental_conf||0)*100)}%</h4>${fbars}<p style="margin:8px 0 0;font-size:13.5px;color:var(--mut)">${c.fundamental_score==null?'Tanpa data pendapatan, komponen ini dihitung netral 30 pada skor akhir.':'Dihitung seperti menilai saham: berapa laba nyata yang dibayar untuk harga token, apakah tumbuh, dan apakah kembali ke pemegang.'}</p></div>
     <div><h4>Narrative Score ${c.narrative_score!=null?c.narrative_score:'-'}/100 · keyakinan data ${Math.round((c.narrative_conf||0)*100)}%</h4>${nbars}<p style="margin:8px 0 0;font-size:13.5px;color:var(--mut)">Skor akhir = 0,5 × dasar ${c.hunter_score!=null?c.hunter_score:Math.round(c.score)} + 0,3 × fundamental ${c.fundamental_score!=null?c.fundamental_score:30}${c.fundamental_score==null?' (netral)':''} + 0,2 × narasi ${c.narrative_score!=null?c.narrative_score:'-'}${c.bonus?` (insight analis ${c.bonus>0?'+':''}${c.bonus})`:''}${c.penalty?`, penalti −${c.penalty}`:''}.</p></div>
     <div><h4>Aliran dana, katalis, dan eksekusi</h4><p style="margin:0 0 8px;font-size:14px">${dx}</p>${cats}${scanBox}</div>
+    ${agBox(c)}
     <div><h4>Mengapa menarik</h4>${c.notes.length?`<ul>${c.notes.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="mut" style="margin:0;font-size:14px">Tidak ada keunggulan menonjol yang terukur.</p>'}
       <h4 style="margin-top:14px">Risiko</h4>${c.risks.length?`<ul>${c.risks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="mut" style="margin:0;font-size:14px">Tidak ada bendera merah otomatis. Tetap cek unlock dan backer.</p>'}</div>
     <div class="src"><h4>Pembicaraan sosial</h4><p style="margin:0 0 6px;font-size:14px">Reddit ${b.reddit||0} · X ${b.x||0} · analis ${b.analyst||0}${b.sent!=null?' · sentimen '+(b.sent>0?'+':'')+b.sent:''}</p>${posts?`<ul>${posts}</ul>`:'<p class="mut" style="margin:0;font-size:14px">Tidak ada pembahasan terdeteksi minggu ini. Itu yang dicari Hunter.</p>'}
       <p style="margin:12px 0 0;display:flex;gap:8px;flex-wrap:wrap">${L.coingecko?`<a class="btnl" href="${esc(L.coingecko)}" target="_blank" rel="noopener">CoinGecko</a>`:''}${L.defillama?`<a class="btnl" href="${esc(L.defillama)}" target="_blank" rel="noopener">DefiLlama</a>`:''}</p></div>
     ${m}
   </div></details>`}
+const VDL={'HINDARI':'lemah','PANTAU':'pantau','RISET LANJUT':'prioritas'};
+function agBox(c){
+  const a=c.agents;
+  if(!a)return `<div class="full"><h4>Dewan agen</h4><p class="mut" style="margin:0;font-size:14px">Belum dinilai: hanya kandidat teratas per siklus diperiksa agen (hemat kuota API).</p></div>`;
+  const rows=(a.reports||[]).map(r=>`<div class="pb"><span>${esc(r.agent)}</span><i><u style="width:${r.score==null?0:r.score}%"></u></i><b>${r.score==null?'n/a':r.score}</b><em>${esc((r.findings||[]).concat((r.flags||[]).map(x=>'⚠ '+x)).join(' · ')||'tidak ada data')}</em></div>`).join('');
+  const lp=c.learned_penalty?`<p class="warnTxt" style="margin:6px 0 0;font-size:13px">Penalti hasil belajar −${c.learned_penalty.pts}: ${esc(c.learned_penalty.why.join('; '))}</p>`:'';
+  const ls=(a.lessons||[]).map(l=>`<li>${esc(l.msg)} <span class="mut">(kemiripan ${l.sim})</span></li>`).join('');
+  const fo=a.founder&&a.founder.name?`<p style="margin:6px 0 0;font-size:13.5px">Founder: ${esc(a.founder.name)} · ${a.founder.bad} proyek gagal/rug sebelumnya</p>`:'';
+  const gh=a.github?`<p style="margin:6px 0 0;font-size:13px;color:var(--mut)">GitHub ${esc(a.github.repo)}: ${a.github.commits90}${a.github.capped?'+':''} commit/90h, ${a.github.authors90} penulis${a.github.fork?', FORK':''}</p>`:'';
+  return `<div class="full"><h4>Dewan agen · Master: ${a.conviction}/100 <span class="pill ${VDL[a.verdict]||''}">${esc(a.verdict)}</span> <span class="pill">${a.llm?'LLM':'aturan'}</span></h4>
+    <p style="margin:0 0 8px;font-size:14px">${esc(a.thesis)}</p>${rows}${fo}${gh}${lp}${ls?`<h4 style="margin-top:10px">Pelajaran dari kegagalan serupa</h4><ul>${ls}</ul>`:''}
+    ${(a.verify||[]).length?`<h4 style="margin-top:10px">Verifikasi manual</h4><ul>${a.verify.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+    <p class="mut" style="margin:8px 0 0;font-size:12px">Cakupan data ${Math.round((a.coverage||0)*100)}%. Agen tanpa data ditandai n/a, bukan ditebak.</p></div>`}
+function renderLearn(d){
+  const l=d.learning,el=$('#hLearn');if(!el)return;
+  if(!l){el.innerHTML='<h2>Pembelajaran diri</h2><p class="sub">Belum ada data pembelajaran.</p>';return}
+  const pc=l.fail_rate==null?'-':Math.round(l.fail_rate*100)+'%';
+  el.innerHTML=`<h2>Pembelajaran diri</h2><p class="sub">Setiap kandidat teratas dicatat, lalu dibandingkan dengan BTC pada hari 7/14/30. Gagal = turun lebih dari 35% atau kalah dari BTC lebih dari 30 poin. Fitur yang sering gagal otomatis mendapat penalti skor (maks 12).</p>
+   <p style="margin:0 0 8px;font-size:14px">${l.picks} pilihan tercatat · ${l.evaluated} sudah dievaluasi · tingkat gagal ${pc}</p>
+   ${(l.rules||[]).length?`<h4>Kriteria yang dipelajari</h4><ul style="margin:0 0 8px;padding-left:18px;font-size:13.5px">${l.rules.map(r=>`<li><b>${esc(r.feature)}</b>: ${Math.round(r.rate*100)}% gagal vs rata-rata ${Math.round(r.base*100)}% (n=${r.n}) → penalti ${r.penalty}</li>`).join('')}</ul>`:'<p class="mut" style="margin:0 0 8px;font-size:13.5px">Belum ada aturan: butuh minimal 10 pilihan terevaluasi dan 5 sampel per fitur.</p>'}
+   ${(l.lessons||[]).length?`<h4>Pelajaran terbaru</h4><ul style="margin:0 0 8px;padding-left:18px;font-size:13.5px">${l.lessons.map(x=>`<li>${esc(x.msg)}</li>`).join('')}</ul>`:''}
+   ${Object.keys(l.trends||{}).length?`<h4>Riwayat narasi</h4><p style="margin:0;font-size:13.5px">${Object.values(l.trends).map(t=>`${esc(t.tag)}: ${esc(t.label)} (${t.series.map(x=>x.toFixed(0)).join('→')}%)`).join(' · ')}</p>`:''}`}
 function renderHunt(){
   const d=H.data;if(!d)return;
   let a=(d.candidates||[]).filter(c=>(!H.tier||c.tier===H.tier)&&(!H.quiet||!c.viral)&&(!H.hot||(c.sector&&c.sector.hot))&&(!H.rev||c.ps!=null||c.pf!=null));
-  const key={score:c=>-c.score,mc:c=>c.mc,ps:c=>c.ps==null?1e9:c.ps,quiet:c=>(c.buzz&&c.buzz.weight||0)+(c.viral?100:0),narr:c=>-(c.narrative_score||0),fund:c=>-(c.fundamental_score==null?-1:c.fundamental_score)}[H.sort];
+  const key={score:c=>-c.score,mc:c=>c.mc,ps:c=>c.ps==null?1e9:c.ps,quiet:c=>(c.buzz&&c.buzz.weight||0)+(c.viral?100:0),narr:c=>-(c.narrative_score||0),fund:c=>-(c.fundamental_score==null?-1:c.fundamental_score),conv:c=>-(c.conviction?c.conviction.conviction:-1)}[H.sort];
   a=a.slice().sort((x,y)=>key(x)-key(y));
   const pr=(d.candidates||[]).filter(c=>c.tier==='prioritas').length,sr=d.sources||{};
   const social=(sr.reddit&&sr.reddit.ok?1:0)+(sr.x&&sr.x.ok?1:0);
@@ -727,6 +751,7 @@ function renderHunt(){
   $('#hList').innerHTML=a.length?a.map(hCard).join(''):`<div class="scanwait">${(d.candidates||[]).length?'Tidak ada kandidat dengan filter ini. Matikan "sembunyikan yang sudah viral" atau ganti tingkat.':'Hunter belum punya hasil live. Di GitHub, hasil pertama muncul setelah workflow berjalan; sementara itu lihat riset manual di bawah.'}</div>`;
   const sc=d.sectors||[],f1=v=>v==null?'-':(v>0?'+':'')+v.toFixed(1)+'%';
   $('#hSectors').innerHTML=`<h2>Narasi minggu ini (top-down)</h2><p class="sub">Sektor diurutkan menurut kecepatan TVL 7 hari. Divergensi = TVL naik lebih cepat daripada harga koin sektor: uang masuk, harga belum menyusul.${(d.top_narratives||[]).length?' Narasi utama: <b>'+d.top_narratives.map(esc).join(', ')+'</b>.':''}</p>`+(sc.length?`<div class="tablebox sect"><table><thead><tr><th>Sektor</th><th class="num">TVL</th><th class="num">TVL 7h</th><th class="num">TVL 30h</th><th class="num">Harga koin 7h</th><th class="num">Divergensi</th><th class="num">Kecepatan</th><th></th></tr></thead><tbody>${sc.map(x=>`<tr><td><b>${esc(x.tag)}</b></td><td class="num">${x.tvl!=null?fU(x.tvl):'-'}</td><td class="num">${f1(x.tvl_ch7)}</td><td class="num">${f1(x.tvl_ch30)}</td><td class="num">${f1(x.price_ch7)}</td><td class="num">${x.divergence!=null?(x.divergence>0?'+':'')+x.divergence.toFixed(0)+' poin':'-'}</td><td class="num">${x.velocity!=null?x.velocity:'-'}</td><td>${x.legacy?'<span class="tag old">usang</span>':(d.top_narratives||[]).includes(x.tag)?'<span class="tag hot">narasi utama</span>':x.divergence>=15?'<span class="tag hot">uang masuk, harga belum</span>':''}</td></tr>`).join('')}</tbody></table></div>`:`<p class="mut" style="margin:0">${d.unavailable?'Hunter gagal dimuat ('+esc(H.err||'tidak diketahui')+'). Di GitHub: jalankan workflow "Kumpulkan berita" sekali (tab Actions, Run workflow); hasil pertama muncul di data/hunt.json. <button class="btnl" id="hRetry" type="button">Coba lagi</button>':'Belum ada data sektor: DefiLlama tidak terjangkau pada siklus terakhir, atau belum ada sektor dengan TVL di atas $150 jt. Lihat Status sumber di bawah.'}</p>`);
+  renderLearn(d);
   const mn=d.manual||[];
   $('#hManual').innerHTML=`<h2>Riset manual</h2><p class="sub">Dikumpulkan dari artikel dan data publik, tiap catatan menyebut tanggal datanya.</p>`+(mn.length?mn.map(m=>`<div class="mnote"><b>$${esc(m.symbol)}</b> ${esc(m.name)} <span class="tag">${esc(m.as_of)}</span> <span class="tag">MC ≈ ${fU(m.mc)}</span><p>${esc(m.thesis)}</p><ul style="margin:4px 0;padding-left:18px;font-size:13.5px">${(m.facts||[]).map(f=>`<li>${esc(f)}</li>`).join('')}</ul>${(m.unverified||[]).length?`<p style="font-size:13px">Belum terverifikasi: ${esc(m.unverified.join(', '))}</p>`:''}<a href="${esc(m.source)}" target="_blank" rel="noopener" style="font-size:13px">Sumber</a></div>`).join(''):'<p class="mut">Belum ada.</p>');
   const an=d.analyst_notes||[];

@@ -208,3 +208,15 @@ def test_buyback_json_flows_into_candidate(monkeypatch):
     r = hunter.hunt(U, PROTO, REV, {}, set(), [], [], now=time.time(), details={}, dex={}, cg_cats=[], proto_rows=[])
     g = next(c for c in r["candidates"] if c["symbol"] == "GOOD")
     assert g["buyback"]["pct"] == 70 and g["fundamental"]["buyback"] == 100
+
+def test_council_integration_and_veto():
+    import agents
+    det = {"goodcoin": {"platforms": {}, "categories": [], "commits4w": 30, "repos": ["https://github.com/a/b"], "age_days": 500}}
+    dx = {"goodcoin": {"chain": "ethereum", "vol24": 1e6, "liq": 900e3, "buys": 300, "sells": 200, "pairs": 2, "pool": "0xp", "address": "0xa", "pool_age_days": 100}}
+    t = {"security": lambda ch, ad: {"honeypot": True, "cannot_sell_all": False, "buy_tax": 0, "sell_tax": 0, "take_back_ownership": False, "hidden_owner": False,
+                                      "open_source": True, "top10_pct": 20, "top1_pct": 3, "holder_count": 10, "lp_locked_pct": 100},
+         "github": lambda r: None, "yield": lambda s: None}
+    r = hunter.hunt(U, PROTO, REV, {}, set(), [], [], now=time.time(), details=det, dex=dx, cg_cats=[], proto_rows=[], tools=t, price_fn=lambda ids: {})
+    g = [c for c in r["candidates"] if c["symbol"] == "GOOD"][0]
+    assert g["conviction"]["verdict"] == "HINDARI" and g["tier"] == "lemah"
+    assert r["schema"] == hunter.SCHEMA and "learning" in r and "_mem" in r

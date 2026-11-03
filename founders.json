@@ -1,0 +1,4 @@
+{"_petunjuk": "Rekam jejak founder diisi manual (tidak ada API gratis). outcome: sukses | rug | gagal | berjalan. Setiap proyek gagal/rug sebelumnya mengurangi keyakinan Master Agent 10 poin.",
+ "founders": [
+  {"symbol": "EXAMPLE", "founder": "(contoh, hapus)", "projects": [{"name": "ProyekLama", "outcome": "gagal", "year": 2022}], "note": "Ganti dengan data terverifikasi."}
+ ]}

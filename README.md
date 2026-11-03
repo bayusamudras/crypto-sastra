@@ -143,3 +143,15 @@ X API (stream), Telegram/Discord resmi proyek, Binance announcement API, data on
 ## Batasan
 Klasifikasi berbasis kata kunci bisa keliru pada rumor atau berita palsu. Estimasi exit dan prediksi adalah pola umum, bukan jaminan.
 Bukan nasihat keuangan. Harga hanya dilacak untuk koin di `CG_IDS` (server.py). Hasil akurasi baru bermakna setelah berjalan beberapa hari.
+
+## Dewan Agen, alat on-chain, dan pembelajaran diri
+
+| Komponen | Isi | Catatan jujur |
+|---|---|---|
+| `agents.py` | 4 sub-agen (On-Chain & Likuiditas, Keamanan & Tokenomics, Narasi & Sosial, Developer & Kode) + Master Agent | Bukan LangGraph/CrewAI: orkestrasi ditulis sendiri tanpa dependensi |
+| Alat (tool) | DexScreener (pool, umur, rasio beli/jual), GoPlus (honeypot, mint, pajak, holder, kunci LP, EVM saja), DefiLlama Yields (real yield vs emisi), GitHub API (aktivitas, fork vs orisinal, kompleksitas PR), pengambil teks whitepaper | Birdeye/Arkham/Solscan berbayar atau butuh kunci: pelacakan paus tidak aktif, agen menandai data kosong |
+| Master Agent | Keyakinan 0-100 dari bobot agen x keyakinan data. Bila `ANTHROPIC_API_KEY` ada, LLM menalar dan boleh memanggil alat (maks 4 putaran), menyetel +-15 | VETO keamanan (honeypot, pajak >10%, pemilik tersembunyi) mutlak, tidak bisa dibatalkan LLM. Jalur LLM belum diuji ke API sungguhan |
+| `memory.py` | Memori vektor (bag-of-words ber-hash + cosine), riwayat tren narasi, catatan pilihan, evaluasi 7/14/30 hari vs BTC, pelajaran dari kegagalan, aturan penalti terpelajar (maks 12) | Setara ChromaDB/Pinecone untuk skala kecil; belum ada embedding semantik |
+| `founders.json` | Rekam jejak founder, diisi manual | Tidak ada API gratis; proyek gagal/rug mengurangi keyakinan 10 poin |
+
+Hanya `AGENT_N` (default 8) kandidat teratas diperiksa agen per siklus; `MASTER_LLM_N` (5) dari itu juga dinalar LLM. Kartu kandidat menampilkan panel agen, dan bagian "Pembelajaran diri" menampilkan aturan yang dipelajari. Aturan baru baru muncul setelah >=10 pilihan terevaluasi.

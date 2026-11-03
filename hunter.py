@@ -14,12 +14,14 @@ import json, math, os, re, time, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 import scan  # memakai jget, TIER1, BACKERS, _load_json
 import narrative
+import agents
+import memory
 
 MC_MIN = float(os.getenv("HUNT_MC_MIN", "15e6"))
 MC_MAX = float(os.getenv("HUNT_MC_MAX", "400e6"))
 VOL_MIN = float(os.getenv("HUNT_VOL_MIN", "300000"))
 PAGES = int(os.getenv("HUNT_PAGES", "3"))
-SCHEMA = 3     # naikkan bila format hunt.json berubah: hasil lama dengan skema berbeda dihitung ulang, bukan dipakai
+SCHEMA = 4     # naikkan bila format hunt.json berubah: hasil lama dengan skema berbeda dihitung ulang, bukan dipakai
 HUNT_EVERY = int(os.getenv("HUNT_EVERY_MIN", "55")) * 60
 X_BEARER = os.getenv("X_BEARER_TOKEN", "")
 X_ANALYSTS = [h.strip().lstrip("@") for h in os.getenv("X_ANALYSTS", "").split(",") if h.strip()]  # akun yang Anda percaya
@@ -396,7 +398,8 @@ def index_protocols(rows):
     return out
 
 def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, posts=None, tweets=None, now=None, top=40,
-         proto_rows=None, cg_cats=None, details=None, dex=None, news=(), prev=None, enrich_n=ENRICH_N, rev7=None, fees7=None, holders=None):
+         proto_rows=None, cg_cats=None, details=None, dex=None, news=(), prev=None, enrich_n=ENRICH_N, rev7=None, fees7=None, holders=None,
+         tools=None, mem=None, llm=None, use_llm=None, price_fn=None, agent_n=None):
     now = now or time.time()
     universe = universe if universe is not None else fetch_universe()
     rows = proto_rows if proto_rows is not None else (fetch_proto_rows() if protocols is None else [])
@@ -484,14 +487,47 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
             "viral": s["viral"], "ghost": s["ghost"], "legacy": s["legacy"], "early": s["early"], "enriched": bool(det),
             "sector": ({"tag": sec["tag"], "tvl_ch7": sec.get("tvl_ch7"), "legacy": sec.get("legacy"), "hot": sec["tag"] in hot} if sec else None),
             "age_days": det.get("age_days"), "dev": ({"commits4w": det.get("commits4w"), "repos": det.get("repos")} if det else None),
-            "dex": ({k: dx[k] for k in ("chain", "vol24", "liq", "buys", "sells", "pairs")} if dx else None),
+            "dex": ({k: dx[k] for k in ("chain", "vol24", "liq", "buys", "sells", "pairs", "address", "pool_age_days")} if dx else None),
             "scan_ref": ({"chain": dx["chain"], "pool": dx["pool"]} if dx and dx.get("pool") else None),
             "catalysts": s["catalysts"], "notes": s["notes"], "risks": s["risks"],
             "buzz": {"reddit": b.get("reddit", 0), "x": b.get("x", 0), "analyst": b.get("analyst", 0), "weight": b.get("weight", 0), "sent": b.get("sent"), "top": b.get("top", [])},
             "manual": manual.get(r["sym"]),
             "links": {"coingecko": "https://www.coingecko.com/en/coins/" + c["id"], "defillama": ("https://defillama.com/protocol/" + r["slug"]) if r["slug"] else None}})
     cands.sort(key=lambda x: -x["score"])
-    gaps = ["DAU / wallet aktif tidak tersedia gratis: pertumbuhan penggunaan diproksikan dari tren fee 7 hari vs 30 hari (DefiLlama). Buyback otomatis hanya dari rasio pendapatan-holder; model resmi diisi di buyback.json.",
+    # --- Dewan Agen + memori. Pada tes (details disuntik) hanya jalan bila tools/price_fn diberikan eksplisit.
+    injected = details is not None
+    if tools is None and not injected: tools = agents.default_tools()
+    if mem is None: mem = memory.Memory()
+    if use_llm is None: use_llm = bool(agents.ANTHROPIC_KEY) and not injected
+    mem.record_sectors(sectors, now)
+    if tools is not None:
+        for c in cands[:(agent_n if agent_n is not None else agents.AGENT_N)]:
+            if c["tier"] == "lemah" and not c.get("manual"): continue
+            tr = mem.trend_for((c.get("sector") or {}).get("tag"))
+            out = agents.run_council(c, tools, mem, llm=llm, use_llm=use_llm and cands.index(c) < agents.LLM_N, trend=tr, unlocks=_unlocks(c["symbol"], now))
+            fo = mem.founder_note(c["symbol"])
+            if fo and fo["bad"]:
+                out["conviction"] = max(0, out["conviction"] - 10 * fo["bad"]); out["red_flags"].append(f"Founder punya {fo['bad']} proyek sebelumnya gagal/rug")
+            out["founder"] = fo
+            c["agents"] = out
+            c["conviction"] = {"conviction": out["conviction"], "verdict": out["verdict"], "veto": out["veto"], "coverage": out["coverage"], "thesis": out["thesis"], "llm": out["llm"]}
+            if out["veto"]: c["tier"] = "lemah"
+    for c in cands:                                           # aturan hasil belajar dari kegagalan sebelumnya
+        pen, why = mem.penalty_for(c)
+        if pen:
+            c["learned_penalty"] = {"pts": pen, "why": why}; c["score"] = round(max(0, c["score"] - pen), 1)
+            if c["score"] < 50 and c["tier"] == "pantau": c["tier"] = "lemah"
+    cands.sort(key=lambda x: -x["score"])
+    if price_fn is None and not injected: price_fn = memory.cg_prices
+    btc = None
+    if price_fn:
+        mem.evaluate(price_fn, now)
+        try: btc = price_fn(["bitcoin"]).get("bitcoin")
+        except Exception: btc = None
+    mem.log_picks(cands, now, btc)
+    gaps = ["Arkham/Solscan/Birdeye berbayar atau butuh kunci: pelacakan paus dan pool Solana tidak aktif; keamanan kontrak (GoPlus) hanya untuk chain EVM. Agen menandai data yang kosong, tidak mengisinya.",
+            "Konviksi Master Agent murni aturan bila ANTHROPIC_API_KEY tidak ada; dengan kunci, LLM menyetel maksimal +-15 dan tidak bisa membatalkan VETO.",
+            "DAU / wallet aktif tidak tersedia gratis: pertumbuhan penggunaan diproksikan dari tren fee 7 hari vs 30 hari (DefiLlama). Buyback otomatis hanya dari rasio pendapatan-holder; model resmi diisi di buyback.json.",
             "Dompet segar / smart money tidak tersedia gratis: akumulasi diproksikan dari rasio beli/jual DEX 24 jam (DexScreener).",
             "Jadwal unlock dan backer Tier-1 tetap manual (unlocks.json, scan.py); isi sebelum mengambil keputusan.",
             "Katalis roadmap diisi manual di catatan catalysts.json atau terdeteksi dari berita radar 72 jam terakhir."]
@@ -501,7 +537,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
             "filters": {"mc_min": MC_MIN, "mc_max": MC_MAX, "vol_min": VOL_MIN},
             "sources": {"coingecko": bool(universe), "defillama": bool(rows or protocols), "reddit": rs, "x": xs, "trending": len(trending), "posts": len(posts), "tweets": len(tweets), "dexscreener": any(c["dex"] for c in cands)},
             "sectors": [{k: v for k, v in s.items()} for s in sectors[:16]], "top_narratives": hot,
-            "candidates": cands[:top], "hist": new_hist, "data_gaps": gaps, "manual": seed.get("manual", []), "analyst_notes": seed.get("analyst_notes", []), "seed_asof": seed.get("asof")}
+            "candidates": cands[:top], "hist": new_hist, "learning": mem.summary(), "_mem": mem.to_dict(), "data_gaps": gaps, "manual": seed.get("manual", []), "analyst_notes": seed.get("analyst_notes", []), "seed_asof": seed.get("asof")}
 
 def handoff(res, n=3):
     """Kandidat teratas (prioritas/pantau, punya pool DEX) yang layak dioper ke Scan Institusional (SMC/FVG/OTE)."""
@@ -518,7 +554,11 @@ def run(load, dump, force=False, news=()):
     prev = load("hunt.json", None)
     if prev and prev.get("schema") != SCHEMA: print("hunter: skema hasil lama berbeda, dihitung ulang"); prev = None
     if prev and not force and time.time() - prev.get("generated_at", 0) < HUNT_EVERY: return prev
-    res = hunt(news=news, prev=prev)
+    fnd = {f["symbol"].upper(): f for f in scan._load_json("founders.json", {}).get("founders", [])}
+    mem = memory.Memory.load(load, fnd)
+    res = hunt(news=news, prev=prev, mem=mem)
+    md = res.pop("_mem", None)
+    if md and res["candidates"]: dump("memory.json", md)
     if not res["candidates"] and prev and prev.get("candidates"):       # sumber gagal: pertahankan hasil lama, jangan menimpanya dengan kosong
         print("hunter: tanpa kandidat, hasil lama dipertahankan"); return prev
     if not res["candidates"]: print("hunter: tanpa kandidat; status sumber ditulis agar website menjelaskan penyebabnya:", res["sources"])

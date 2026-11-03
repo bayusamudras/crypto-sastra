@@ -176,7 +176,9 @@ def fetch_dex(platforms, mc):
         buys = sum(((p.get("txns") or {}).get("h24") or {}).get("buys") or 0 for p in pairs)
         sells = sum(((p.get("txns") or {}).get("h24") or {}).get("sells") or 0 for p in pairs)
         top = max(pairs, key=lambda p: (p.get("liquidity") or {}).get("usd") or 0)
-        cand = {"chain": DS_CHAIN[plat], "vol24": vol, "liq": liq, "buys": buys, "sells": sells, "pool": top.get("pairAddress"), "pairs": len(pairs)}
+        made = top.get("pairCreatedAt")
+        cand = {"chain": DS_CHAIN[plat], "vol24": vol, "liq": liq, "buys": buys, "sells": sells, "pool": top.get("pairAddress"), "pairs": len(pairs), "address": addr,
+                "pool_age_days": ((time.time() * 1000 - made) / 86400000) if made else None}
         if not best or cand["liq"] > best["liq"]: best = cand
     return best
 
