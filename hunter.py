@@ -16,12 +16,13 @@ import scan  # memakai jget, TIER1, BACKERS, _load_json
 import narrative
 import agents
 import memory
+import quant
 
 MC_MIN = float(os.getenv("HUNT_MC_MIN", "15e6"))
 MC_MAX = float(os.getenv("HUNT_MC_MAX", "400e6"))
 VOL_MIN = float(os.getenv("HUNT_VOL_MIN", "300000"))
 PAGES = int(os.getenv("HUNT_PAGES", "3"))
-SCHEMA = 4     # naikkan bila format hunt.json berubah: hasil lama dengan skema berbeda dihitung ulang, bukan dipakai
+SCHEMA = 5     # naikkan bila format hunt.json berubah: hasil lama dengan skema berbeda dihitung ulang, bukan dipakai
 HUNT_EVERY = int(os.getenv("HUNT_EVERY_MIN", "55")) * 60
 X_BEARER = os.getenv("X_BEARER_TOKEN", "")
 X_ANALYSTS = [h.strip().lstrip("@") for h in os.getenv("X_ANALYSTS", "").split(",") if h.strip()]  # akun yang Anda percaya
@@ -200,7 +201,7 @@ def extract_mentions(posts, tweets, universe):
     return res
 
 # ---------------------------------------------------------------- skor
-def _unlocks(sym, now):
+def _unlocks(sym, now, days=90):
     """Unlock <= 90 hari dari unlocks.json (diisi manual). None bila simbol tidak tercatat."""
     data = scan._load_json("unlocks.json", {})
     rows = data.get(sym)
@@ -209,7 +210,7 @@ def _unlocks(sym, now):
     for r in rows:
         try: ts = time.mktime(time.strptime(r["date"], "%Y-%m-%d"))
         except Exception: continue
-        if 0 <= ts - now <= 90 * 86400: out.append(r)
+        if 0 <= ts - now <= days * 86400: out.append(r)
     return out
 
 def fundamental_score(ps, pf, growth, payout, cur):
@@ -399,7 +400,7 @@ def index_protocols(rows):
 
 def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, posts=None, tweets=None, now=None, top=40,
          proto_rows=None, cg_cats=None, details=None, dex=None, news=(), prev=None, enrich_n=ENRICH_N, rev7=None, fees7=None, holders=None,
-         tools=None, mem=None, llm=None, use_llm=None, price_fn=None, agent_n=None):
+         tools=None, mem=None, llm=None, use_llm=None, price_fn=None, agent_n=None, qdata=None):
     now = now or time.time()
     universe = universe if universe is not None else fetch_universe()
     rows = proto_rows if proto_rows is not None else (fetch_proto_rows() if protocols is None else [])
@@ -411,6 +412,10 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
         df = fetch_fee_detail("dailyFees"); fees = {k: v["d30"] for k, v in df.items()}; fees7 = {k: v["d7"] for k, v in df.items()}
     if live_rev:
         dh = fetch_fee_detail("dailyHoldersRevenue"); holders = {k: v["d30"] for k, v in dh.items()}
+    if qdata is None and details is not None: qdata = {}           # tes: tanpa jaringan
+    if qdata is None:
+        qdata = {"fees": quant.fetch_overview("fees", "dailyFees"), "vol": {**quant.fetch_overview("dexs"), **quant.fetch_overview("derivatives")}, "sm": quant.fetch_smart_money()}
+    qf, qv, qsm = qdata.get("fees", {}), qdata.get("vol", {}), qdata.get("sm", {})
     bb = {e["symbol"].upper(): e for e in scan._load_json("buyback.json", {}).get("events", [])}
     trending = trending if trending is not None else fetch_trending()
     if posts is None: posts, rs = fetch_reddit()
@@ -430,6 +435,13 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
         if info and c.get("fully_diluted_valuation"):
             peers.setdefault(narrative.sector_of(info.get("category"))[0], []).append(c["fully_diluted_valuation"])
     med = {t: sorted(v)[len(v) // 2] for t, v in peers.items() if len(v) >= 3}
+    pf_rows = []
+    for c in universe:
+        info = protocols.get(c["id"])
+        if info and c.get("fully_diluted_valuation"):
+            f30 = (qf.get((info.get("slug") or "").lower()) or {}).get("d30") or fees.get((info.get("slug") or "").lower())
+            pf_rows.append((narrative.sector_of(info.get("category"))[0], quant.pf_ratio(c["fully_diluted_valuation"], f30)))
+    pf_med = quant.sector_medians(pf_rows)
     hist = (prev or {}).get("hist", {})
     seed = scan._load_json("hunt_seed.json", {}); manual = {m["symbol"]: m for m in seed.get("manual", [])}
     base_rows = []
@@ -472,10 +484,12 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
     for r in base_rows:
         c, s = r["c"], r["s"]; b = mentions.get(c["id"]) or {}; det = r.get("det") or {}; dx = r.get("dex")
         sec = r["sector"]
-        new_hist[c["id"]] = {"w": b.get("weight", 0), "commits": det.get("commits4w") if det.get("commits4w") is not None else (hist.get(c["id"]) or {}).get("commits")}
+        ph = hist.get(c["id"]) or {}
+        circ = c.get("circulating_supply"); keep = ph.get("circ") and ph.get("ct") and (now - ph["ct"]) < 30 * 86400
+        new_hist[c["id"]] = {"circ": ph["circ"] if keep else circ, "ct": ph["ct"] if keep else int(now), "w": b.get("weight", 0), "commits": det.get("commits4w") if det.get("commits4w") is not None else (hist.get(c["id"]) or {}).get("commits")}
         cands.append({
             "id": c["id"], "symbol": r["sym"], "name": c["name"], "rank": c.get("market_cap_rank"), "price": c.get("current_price"),
-            "mc": c.get("market_cap"), "fdv": c.get("fully_diluted_valuation"), "vol": c.get("total_volume"),
+            "mc": c.get("market_cap"), "fdv": c.get("fully_diluted_valuation"), "circ": c.get("circulating_supply"), "vol": c.get("total_volume"),
             "chg7": c.get("price_change_percentage_7d_in_currency"), "chg30": c.get("price_change_percentage_30d_in_currency"),
             "ath_dd": s["dd"], "tvl": (r["info"] or {}).get("tvl"), "category": (r["info"] or {}).get("category"), "chains": (r["info"] or {}).get("chains"),
             "rev30": r["rv"], "fees30": r["fe"], "ps": s["ps"], "mc_tvl": s["mc_tvl"], "fdv_mc": s["fdv_mc"], "vol_mc": s["vol_mc"],
@@ -495,6 +509,15 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
             "links": {"coingecko": "https://www.coingecko.com/en/coins/" + c["id"], "defillama": ("https://defillama.com/protocol/" + r["slug"]) if r["slug"] else None}})
     cands.sort(key=lambda x: -x["score"])
     # --- Dewan Agen + memori. Pada tes (details disuntik) hanya jalan bila tools/price_fn diberikan eksplisit.
+    for c in cands:                                           # modul kuantitatif sektor / pertumbuhan / tokenomics / smart money
+        sl = ((c["links"].get("defillama") or "").rsplit("/", 1)[-1] or "").lower(); tag = (c.get("sector") or {}).get("tag")
+        q = quant.analyze(c, {"tag": tag, "pf_med": pf_med.get(tag), "fees": qf.get(sl), "vol": qv.get(sl), "tvl": c.get("tvl"), "unlocks12": _unlocks(c["symbol"], now, 365),
+                              "circ_now": c.get("circ"), "hist": hist.get(c["id"]), "now": now, "sm": qsm.get(c["symbol"])})
+        c["quant"] = q
+        if q["adjust"]: c["score"] = round(max(0, min(100, c["score"] + q["adjust"])), 1)
+        if q["elim"]: c["tier"] = "lemah"
+        elif c["tier"] == "prioritas" and c["score"] < 65: c["tier"] = "pantau"
+    cands.sort(key=lambda x: -x["score"])
     injected = details is not None
     if tools is None and not injected: tools = agents.default_tools()
     if mem is None: mem = memory.Memory()
@@ -526,6 +549,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
         except Exception: btc = None
     mem.log_picks(cands, now, btc)
     gaps = ["Arkham/Solscan/Birdeye berbayar atau butuh kunci: pelacakan paus dan pool Solana tidak aktif; keamanan kontrak (GoPlus) hanya untuk chain EVM. Agen menandai data yang kosong, tidak mengisinya.",
+            "Smart money (100 dompet profit teratas) tidak ada API gratis: aktif hanya bila DUNE_API_KEY + DUNE_QUERY_ID diisi atau smartmoney.json dipasok; jalur Dune belum diuji ke API sungguhan. Net real yield memakai pertumbuhan suplai beredar yang dicatat sejak siklus pertama (butuh >=3 hari).",
             "Konviksi Master Agent murni aturan bila ANTHROPIC_API_KEY tidak ada; dengan kunci, LLM menyetel maksimal +-15 dan tidak bisa membatalkan VETO.",
             "DAU / wallet aktif tidak tersedia gratis: pertumbuhan penggunaan diproksikan dari tren fee 7 hari vs 30 hari (DefiLlama). Buyback otomatis hanya dari rasio pendapatan-holder; model resmi diisi di buyback.json.",
             "Dompet segar / smart money tidak tersedia gratis: akumulasi diproksikan dari rasio beli/jual DEX 24 jam (DexScreener).",

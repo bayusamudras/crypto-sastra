@@ -49,6 +49,9 @@ def features_of(c):
     if dx.get("pool_age_days") is not None and dx["pool_age_days"] < 14: f.append("pool_baru")
     if (c.get("buzz") or {}).get("bot_ratio") and c["buzz"]["bot_ratio"] > .5: f.append("sosial_bot")
     if any("Unlock" in x for x in (c.get("risks") or [])): f.append("unlock_dekat")
+    q = c.get("quant") or {}
+    if (q.get("emission") or {}).get("status") == "jebakan_emisi": f.append("jebakan_emisi")
+    if (q.get("depth") or {}).get("status") == "tipis": f.append("depth_tipis")
     sec = (c.get("sector") or {}).get("tag")
     if sec: f.append("sektor:" + sec)
     ag = c.get("agents") or {}

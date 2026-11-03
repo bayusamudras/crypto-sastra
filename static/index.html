@@ -709,6 +709,7 @@ function hCard(c,i){
     <div><h4>Fundamental &amp; pendapatan ${c.fundamental_score!=null?c.fundamental_score:'n/a'}/100 · keyakinan data ${Math.round((c.fundamental_conf||0)*100)}%</h4>${fbars}<p style="margin:8px 0 0;font-size:13.5px;color:var(--mut)">${c.fundamental_score==null?'Tanpa data pendapatan, komponen ini dihitung netral 30 pada skor akhir.':'Dihitung seperti menilai saham: berapa laba nyata yang dibayar untuk harga token, apakah tumbuh, dan apakah kembali ke pemegang.'}</p></div>
     <div><h4>Narrative Score ${c.narrative_score!=null?c.narrative_score:'-'}/100 · keyakinan data ${Math.round((c.narrative_conf||0)*100)}%</h4>${nbars}<p style="margin:8px 0 0;font-size:13.5px;color:var(--mut)">Skor akhir = 0,5 × dasar ${c.hunter_score!=null?c.hunter_score:Math.round(c.score)} + 0,3 × fundamental ${c.fundamental_score!=null?c.fundamental_score:30}${c.fundamental_score==null?' (netral)':''} + 0,2 × narasi ${c.narrative_score!=null?c.narrative_score:'-'}${c.bonus?` (insight analis ${c.bonus>0?'+':''}${c.bonus})`:''}${c.penalty?`, penalti −${c.penalty}`:''}.</p></div>
     <div><h4>Aliran dana, katalis, dan eksekusi</h4><p style="margin:0 0 8px;font-size:14px">${dx}</p>${cats}${scanBox}</div>
+    ${qBox(c)}
     ${agBox(c)}
     <div><h4>Mengapa menarik</h4>${c.notes.length?`<ul>${c.notes.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="mut" style="margin:0;font-size:14px">Tidak ada keunggulan menonjol yang terukur.</p>'}
       <h4 style="margin-top:14px">Risiko</h4>${c.risks.length?`<ul>${c.risks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="mut" style="margin:0;font-size:14px">Tidak ada bendera merah otomatis. Tetap cek unlock dan backer.</p>'}</div>
@@ -716,6 +717,25 @@ function hCard(c,i){
       <p style="margin:12px 0 0;display:flex;gap:8px;flex-wrap:wrap">${L.coingecko?`<a class="btnl" href="${esc(L.coingecko)}" target="_blank" rel="noopener">CoinGecko</a>`:''}${L.defillama?`<a class="btnl" href="${esc(L.defillama)}" target="_blank" rel="noopener">DefiLlama</a>`:''}</p></div>
     ${m}
   </div></details>`}
+const QST={undervalued_terkonfirmasi:['Undervalued terkonfirmasi','pos'],murah_belum_terkonfirmasi:['Murah, belum terkonfirmasi','mid'],mahal:['Mahal vs sektor','neg'],wajar:['Wajar','mid'],
+ sangat_aktif:['Sangat aktif','pos'],aktif:['Aktif','pos'],normal:['Normal','mid'],rendah:['Rendah','neg'],divergensi:['Divergensi harga-penggunaan','pos'],sudah_naik:['Harga sudah naik','mid'],tidak:['Tidak ada','mid'],
+ eliminasi:['ELIMINASI','neg'],lolos:['Lolos','pos'],rendah_tanpa_unlock:['Rendah tanpa unlock','mid'],positif:['Real yield positif','pos'],negatif:['Emisi > pendapatan','neg'],jebakan_emisi:['Jebakan emisi','neg'],
+ akumulasi:['Akumulasi','pos'],distribusi:['Distribusi','neg'],netral:['Netral','mid'],tebal:['Tebal','pos'],sedang:['Sedang','mid'],tipis:['Tipis','neg'],'n/a':['n/a','mid']};
+function qBox(c){
+  const q=c.quant;if(!q)return '';
+  const t=k=>{const m=QST[k]||[k,'mid'];return `<span class="pill ${m[1]==='pos'?'prioritas':m[1]==='neg'?'viral':'pantau'}">${esc(m[0])}</span>`};
+  const f=(v,d=1)=>v==null?'-':v.toFixed(d),pc=v=>v==null?'-':(v>0?'+':'')+(v*100).toFixed(0)+'%';
+  const v=q.valuation,ce=q.capital_efficiency,dv=q.divergence,tk=q.tokenomics,em=q.emission,sm=q.smart_money,dp=q.depth;
+  const row=(n,st,txt)=>`<div class="pb"><span>${n}</span><em style="grid-column:2/-1">${t(st)} ${esc(txt)}</em></div>`;
+  return `<div class="full"><h4>Filter kuantitatif · penyesuaian skor ${q.adjust>0?'+':''}${q.adjust} · cakupan data ${Math.round(q.coverage*100)}%</h4>
+   ${row('P/F vs sektor',v.status,v.note||'-')}
+   ${row('Efisiensi modal',ce.status,ce.ratio==null?'volume DEX/TVL tidak tersedia':'volume harian / TVL = '+f(ce.ratio,2))}
+   ${row('Divergensi',dv.status,dv.status==='n/a'?'butuh pertumbuhan volume/fee dan harga 30h':`volume ${pc(dv.vol_growth)}, fee ${pc(dv.fee_growth)}, harga 30h ${f(dv.price_ch30)}% (${esc(dv.basis||'')})`)}
+   ${row('MC / FDV',tk.status,tk.mc_fdv==null?'tidak tersedia':f(tk.mc_fdv,2)+(tk.unlocks12==null?' · unlock 12 bulan tidak tercatat':` · ${tk.unlocks12} unlock dalam 12 bulan`))}
+   ${row('Net real yield',em.status,em.net_real_yield==null?'butuh riwayat suplai ≥3 hari dan data pendapatan (mulai dicatat sejak siklus pertama)':`pendapatan − emisi = $${(em.net_real_yield/1e6).toFixed(2)} jt/tahun (${em.days} hari data)`)}
+   ${row('Smart money',sm.status,sm.status==='n/a'?'tanpa sumber data (butuh DUNE_API_KEY atau smartmoney.json)':`net 7h $${((sm.net7||0)/1e3).toFixed(0)} rb`)}
+   ${row('Kedalaman DEX',dp.status,dp.ratio==null?'tidak tersedia':'likuiditas / market cap = '+(dp.ratio*100).toFixed(1)+'%')}
+   ${(q.flags||[]).length?`<ul style="margin:8px 0 0">${q.flags.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</div>`}
 const VDL={'HINDARI':'lemah','PANTAU':'pantau','RISET LANJUT':'prioritas'};
 function agBox(c){
   const a=c.agents;

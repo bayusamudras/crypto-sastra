@@ -155,3 +155,9 @@ Bukan nasihat keuangan. Harga hanya dilacak untuk koin di `CG_IDS` (server.py). 
 | `founders.json` | Rekam jejak founder, diisi manual | Tidak ada API gratis; proyek gagal/rug mengurangi keyakinan 10 poin |
 
 Hanya `AGENT_N` (default 8) kandidat teratas diperiksa agen per siklus; `MASTER_LLM_N` (5) dari itu juga dinalar LLM. Kartu kandidat menampilkan panel agen, dan bagian "Pembelajaran diri" menampilkan aturan yang dipelajari. Aturan baru baru muncul setelah >=10 pilihan terevaluasi.
+
+## Modul filter kuantitatif (`quant.py`)
+
+P/F (FDV / fee tahunan) dibanding median sektor (minimal 3 rekan berdata); efisiensi modal (volume DEX harian / TVL, aktif >= 0,8); divergensi harga-penggunaan (volume dan fee naik >30% sementara harga 30 hari <5%); MC/FDV < 0,25 dieliminasi kecuali dipastikan tanpa unlock 12 bulan di `unlocks.json` (jadwal tak tercatat dianggap berisiko); net real yield = pendapatan - nilai emisi (emisi dihitung dari pertumbuhan suplai beredar yang dicatat sejak siklus pertama, jadi baru muncul setelah >= 3 hari); kedalaman likuiditas DEX / market cap. Penyesuaian skor dibatasi +10 / -18.
+
+Smart money (100 dompet profit teratas) tidak punya API gratis. Aktif hanya jika `DUNE_API_KEY` + `DUNE_QUERY_ID` (query Anda sendiri dengan kolom `symbol, net_flow_usd_7d, net_flow_usd_14d, wallets_buying, wallets_selling`) dipasang sebagai secrets; jalur ini belum diuji ke Dune sungguhan. Tanpa itu komponen ditampilkan n/a.
