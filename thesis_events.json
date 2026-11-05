@@ -1,0 +1,3 @@
+{"_petunjuk": "Catatan tesis manual Anda (bukan data otomatis). events: {theme: stablecoin|rwa|derivatives|restaking|lending|etf, date, note, source, horizon}. stablecoin_meta: {SIMBOL: {bonus: -10..10, note}} untuk atribut kepatuhan/integrasi institusi yang Anda verifikasi sendiri. Isi hanya fakta yang bisa dirujuk ke sumber.",
+ "events": [],
+ "stablecoin_meta": {}}

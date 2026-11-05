@@ -17,6 +17,7 @@ import narrative
 import agents
 import memory
 import quant
+import thesis
 
 MC_MIN = float(os.getenv("HUNT_MC_MIN", "15e6"))
 MC_MAX = float(os.getenv("HUNT_MC_MAX", "400e6"))
@@ -400,7 +401,7 @@ def index_protocols(rows):
 
 def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, posts=None, tweets=None, now=None, top=40,
          proto_rows=None, cg_cats=None, details=None, dex=None, news=(), prev=None, enrich_n=ENRICH_N, rev7=None, fees7=None, holders=None,
-         tools=None, mem=None, llm=None, use_llm=None, price_fn=None, agent_n=None, qdata=None):
+         tools=None, mem=None, llm=None, use_llm=None, price_fn=None, agent_n=None, qdata=None, stable_rows=None):
     now = now or time.time()
     universe = universe if universe is not None else fetch_universe()
     rows = proto_rows if proto_rows is not None else (fetch_proto_rows() if protocols is None else [])
@@ -548,6 +549,12 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
         try: btc = price_fn(["bitcoin"]).get("bitcoin")
         except Exception: btc = None
     mem.log_picks(cands, now, btc)
+    if stable_rows is None: stable_rows = [] if details is not None else thesis.fetch_stablecoins()
+    th = thesis.build(news, sectors, rows, universe, qf or {}, stable_rows, cands, scan._load_json("thesis_events.json", {}).get("events", []),
+                      {k.upper(): v for k, v in scan._load_json("thesis_events.json", {}).get("stablecoin_meta", {}).items()}, now)
+    if use_llm and th["themes"]:
+        for t in th["themes"][:3]:
+            t["llm"] = thesis.llm_synthesis(t, llm or agents.anthropic_call)
     gaps = ["Arkham/Solscan/Birdeye berbayar atau butuh kunci: pelacakan paus dan pool Solana tidak aktif; keamanan kontrak (GoPlus) hanya untuk chain EVM. Agen menandai data yang kosong, tidak mengisinya.",
             "Smart money (100 dompet profit teratas) tidak ada API gratis: aktif hanya bila DUNE_API_KEY + DUNE_QUERY_ID diisi atau smartmoney.json dipasok; jalur Dune belum diuji ke API sungguhan. Net real yield memakai pertumbuhan suplai beredar yang dicatat sejak siklus pertama (butuh >=3 hari).",
             "Konviksi Master Agent murni aturan bila ANTHROPIC_API_KEY tidak ada; dengan kunci, LLM menyetel maksimal +-15 dan tidak bisa membatalkan VETO.",
@@ -561,7 +568,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
             "filters": {"mc_min": MC_MIN, "mc_max": MC_MAX, "vol_min": VOL_MIN},
             "sources": {"coingecko": bool(universe), "defillama": bool(rows or protocols), "reddit": rs, "x": xs, "trending": len(trending), "posts": len(posts), "tweets": len(tweets), "dexscreener": any(c["dex"] for c in cands)},
             "sectors": [{k: v for k, v in s.items()} for s in sectors[:16]], "top_narratives": hot,
-            "candidates": cands[:top], "hist": new_hist, "learning": mem.summary(), "_mem": mem.to_dict(), "data_gaps": gaps, "manual": seed.get("manual", []), "analyst_notes": seed.get("analyst_notes", []), "seed_asof": seed.get("asof")}
+            "candidates": cands[:top], "hist": new_hist, "thesis": th, "learning": mem.summary(), "_mem": mem.to_dict(), "data_gaps": gaps, "manual": seed.get("manual", []), "analyst_notes": seed.get("analyst_notes", []), "seed_asof": seed.get("asof")}
 
 def handoff(res, n=3):
     """Kandidat teratas (prioritas/pantau, punya pool DEX) yang layak dioper ke Scan Institusional (SMC/FVG/OTE)."""

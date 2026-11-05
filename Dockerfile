@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 WORKDIR /app
-COPY server.py scan.py hunter.py narrative.py build.py unlocks.json macro.json hunt_seed.json catalysts.json buyback.json founders.json agents.py memory.py quant.py ./
+COPY server.py scan.py hunter.py narrative.py build.py unlocks.json macro.json hunt_seed.json catalysts.json buyback.json founders.json agents.py memory.py quant.py thesis.py thesis_events.json ./
 COPY site ./site
 COPY static ./static
 RUN python3 build.py

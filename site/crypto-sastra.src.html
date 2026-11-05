@@ -325,6 +325,7 @@ footer p{margin:0;max-width:78ch}
     <label class="chk"><input type="checkbox" id="hRev"> Hanya yang berpendapatan</label>
     <span class="count" id="hMeta"></span>
   </div>
+  <section class="panel" id="hThesis" style="margin-bottom:14px"></section>
   <section class="panel" id="hSectors" style="margin-bottom:14px"></section>
   <div id="hList"><div class="scanwait">Memuat hasil Hunter…</div></div>
   <div class="hgrid">
@@ -750,6 +751,22 @@ function renderLearn(d){
    ${(l.rules||[]).length?`<h4>Kriteria yang dipelajari</h4><ul style="margin:0 0 8px;padding-left:18px;font-size:13.5px">${l.rules.map(r=>`<li><b>${esc(r.feature)}</b>: ${Math.round(r.rate*100)}% gagal vs rata-rata ${Math.round(r.base*100)}% (n=${r.n}) → penalti ${r.penalty}</li>`).join('')}</ul>`:'<p class="mut" style="margin:0 0 8px;font-size:13.5px">Belum ada aturan: butuh minimal 10 pilihan terevaluasi dan 5 sampel per fitur.</p>'}
    ${(l.lessons||[]).length?`<h4>Pelajaran terbaru</h4><ul style="margin:0 0 8px;padding-left:18px;font-size:13.5px">${l.lessons.map(x=>`<li>${esc(x.msg)}</li>`).join('')}</ul>`:''}
    ${Object.keys(l.trends||{}).length?`<h4>Riwayat narasi</h4><p style="margin:0;font-size:13.5px">${Object.values(l.trends).map(t=>`${esc(t.tag)}: ${esc(t.label)} (${t.series.map(x=>x.toFixed(0)).join('→')}%)`).join(' · ')}</p>`:''}`}
+const CONF={kuat:'prioritas',sedang:'pantau',lemah:'lemah'};
+function renderThesis(d){
+  const el=$('#hThesis');if(!el)return;const th=d.thesis;
+  if(!th){el.innerHTML='<h2>Tesis tema</h2><p class="sub">Belum ada tesis: data hunt.json versi lama. Tunggu siklus berikutnya.</p>';return}
+  const ev=t=>(t.evidence||[]).map(e=>`<li><b>${esc(e.type)}</b>: ${esc(e.text)}${(e.items||[]).length?`<ul>${e.items.map(i=>`<li><a href="${esc(i.url||'#')}" target="_blank" rel="noopener">${esc(i.title)}</a> <span class="mut">(${esc(i.source||'')}, skor ${i.score})</span></li>`).join('')}</ul>`:''}${e.source?` <a href="${esc(e.source)}" target="_blank" rel="noopener">sumber</a>`:''}</li>`).join('');
+  const lead=(l,i)=>`<div class="pb"><span>${i+1}. ${esc(l.symbol?'$'+l.symbol:l.name)} <small class="mut">${esc(l.name&&l.symbol?l.name:'')}</small></span><i><u style="width:${l.score}%"></u></i><b>${l.score}</b><em>${esc(l.why.join(' · '))}</em></div>`;
+  const card=t=>`<details class="hc" open style="margin-bottom:10px"><summary style="display:block"><b>${esc(t.title)}</b> <span class="pill ${CONF[t.confidence]}">keyakinan ${esc(t.confidence)}</span> <span class="pill">${esc(t.horizon)}</span>
+   <span class="mut" style="font-size:12.5px"> bukti: ${esc((t.types||[]).join(', '))}</span></summary><div class="hbody">
+   <div class="full"><h4>Tesis</h4><p style="margin:0;font-size:14px">${esc(t.llm||t.mechanism)}</p></div>
+   <div><h4>Bukti yang tercatat</h4><ul>${ev(t)}</ul></div>
+   <div><h4>Akan mengonfirmasi</h4><ul>${t.confirm.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><h4 style="margin-top:12px">Membatalkan tesis</h4><ul>${t.invalidate.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+   ${(t.leaders||[]).length?`<div class="full"><h4>Stablecoin terbaik &amp; alasannya</h4>${t.leaders.map(lead).join('')}</div>`:''}
+   ${(t.leaders_protocols||[]).length?`<div class="full"><h4>Proyek/protokol terbaik di sektor ini (skala, fee, pertumbuhan, sebaran chain)</h4>${t.leaders_protocols.map(lead).join('')}</div>`:''}
+   <div class="full"><p class="mut" style="margin:0;font-size:12.5px">${esc(t.caveat)}</p></div></div></details>`;
+  el.innerHTML=`<h2>Tesis tema: apa yang mungkin terjadi</h2><p class="sub">Disusun dari berita radar 7 hari, momentum TVL sektor, pasokan stablecoin, dan catatan manual Anda (thesis_events.json). Keyakinan naik hanya bila ada bukti dari jenis berbeda. Ini hipotesis, bukan ramalan.</p>`
+   +((th.themes||[]).length?th.themes.map(card).join(''):'<p class="mut" style="margin:0">Belum ada tema dengan bukti cukup. Tambahkan catatan di thesis_events.json atau tunggu berita/data baru.</p>')}
 function renderHunt(){
   const d=H.data;if(!d)return;
   let a=(d.candidates||[]).filter(c=>(!H.tier||c.tier===H.tier)&&(!H.quiet||!c.viral)&&(!H.hot||(c.sector&&c.sector.hot))&&(!H.rev||c.ps!=null||c.pf!=null));
@@ -763,7 +780,7 @@ function renderHunt(){
   $('#hList').innerHTML=a.length?a.map(hCard).join(''):`<div class="scanwait">${(d.candidates||[]).length?'Tidak ada kandidat dengan filter ini. Matikan "sembunyikan yang sudah viral" atau ganti tingkat.':'Hunter belum punya hasil live. Di GitHub, hasil pertama muncul setelah workflow berjalan; sementara itu lihat riset manual di bawah.'}</div>`;
   const sc=d.sectors||[],f1=v=>v==null?'-':(v>0?'+':'')+v.toFixed(1)+'%';
   $('#hSectors').innerHTML=`<h2>Narasi minggu ini (top-down)</h2><p class="sub">Sektor diurutkan menurut kecepatan TVL 7 hari. Divergensi = TVL naik lebih cepat daripada harga koin sektor: uang masuk, harga belum menyusul.${(d.top_narratives||[]).length?' Narasi utama: <b>'+d.top_narratives.map(esc).join(', ')+'</b>.':''}</p>`+(sc.length?`<div class="tablebox sect"><table><thead><tr><th>Sektor</th><th class="num">TVL</th><th class="num">TVL 7h</th><th class="num">TVL 30h</th><th class="num">Harga koin 7h</th><th class="num">Divergensi</th><th class="num">Kecepatan</th><th></th></tr></thead><tbody>${sc.map(x=>`<tr><td><b>${esc(x.tag)}</b></td><td class="num">${x.tvl!=null?fU(x.tvl):'-'}</td><td class="num">${f1(x.tvl_ch7)}</td><td class="num">${f1(x.tvl_ch30)}</td><td class="num">${f1(x.price_ch7)}</td><td class="num">${x.divergence!=null?(x.divergence>0?'+':'')+x.divergence.toFixed(0)+' poin':'-'}</td><td class="num">${x.velocity!=null?x.velocity:'-'}</td><td>${x.legacy?'<span class="tag old">usang</span>':(d.top_narratives||[]).includes(x.tag)?'<span class="tag hot">narasi utama</span>':x.divergence>=15?'<span class="tag hot">uang masuk, harga belum</span>':''}</td></tr>`).join('')}</tbody></table></div>`:`<p class="mut" style="margin:0">${d.unavailable?'Hunter gagal dimuat ('+esc(H.err||'tidak diketahui')+'). Di GitHub: jalankan workflow "Kumpulkan berita" sekali (tab Actions, Run workflow); hasil pertama muncul di data/hunt.json. <button class="btnl" id="hRetry" type="button">Coba lagi</button>':'Belum ada data sektor: DefiLlama tidak terjangkau pada siklus terakhir, atau belum ada sektor dengan TVL di atas $150 jt. Lihat Status sumber di bawah.'}</p>`);
-  renderLearn(d);
+  renderLearn(d);renderThesis(d);
   const mn=d.manual||[];
   $('#hManual').innerHTML=`<h2>Riset manual</h2><p class="sub">Dikumpulkan dari artikel dan data publik, tiap catatan menyebut tanggal datanya.</p>`+(mn.length?mn.map(m=>`<div class="mnote"><b>$${esc(m.symbol)}</b> ${esc(m.name)} <span class="tag">${esc(m.as_of)}</span> <span class="tag">MC ≈ ${fU(m.mc)}</span><p>${esc(m.thesis)}</p><ul style="margin:4px 0;padding-left:18px;font-size:13.5px">${(m.facts||[]).map(f=>`<li>${esc(f)}</li>`).join('')}</ul>${(m.unverified||[]).length?`<p style="font-size:13px">Belum terverifikasi: ${esc(m.unverified.join(', '))}</p>`:''}<a href="${esc(m.source)}" target="_blank" rel="noopener" style="font-size:13px">Sumber</a></div>`).join(''):'<p class="mut">Belum ada.</p>');
   const an=d.analyst_notes||[];
