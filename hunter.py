@@ -584,6 +584,7 @@ def run(load, dump, force=False, news=()):
     """Mode Actions: jalankan bila hasil terakhir lebih tua dari HUNT_EVERY. Riwayat buzz/commit ikut disimpan (untuk kecepatan sosial dan tren developer)."""
     prev = load("hunt.json", None)
     if prev and prev.get("schema") != SCHEMA: print("hunter: skema hasil lama berbeda, dihitung ulang"); prev = None
+    if prev and "thesis" not in prev: force = True       # hasil lama dibuat sebelum Mesin Tesis ada: hitung ulang sekarang, jangan menunggu HUNT_EVERY
     if prev and not force and time.time() - prev.get("generated_at", 0) < HUNT_EVERY: return prev
     fnd = {f["symbol"].upper(): f for f in scan._load_json("founders.json", {}).get("founders", [])}
     mem = memory.Memory.load(load, fnd)
