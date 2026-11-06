@@ -165,7 +165,7 @@ def test_old_schema_is_recomputed(monkeypatch):
     fresh_old = {"generated_at": time.time(), "candidates": [{"y": 1}]}        # baru dibuat tetapi tanpa skema
     out = hunter.run(lambda n, d: fresh_old, lambda n, o: None)
     assert calls and out["schema"] == hunter.SCHEMA
-    calls.clear(); cur = {"schema": hunter.SCHEMA, "generated_at": time.time(), "candidates": [{"y": 1}]}
+    calls.clear(); cur = {"schema": hunter.SCHEMA, "generated_at": time.time(), "candidates": [{"y": 1}], "thesis": {}}
     assert hunter.run(lambda n, d: cur, lambda n, o: None) is cur and not calls
 
 # ---------------------------------------------------------------- Fundamental & Pendapatan
