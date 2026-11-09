@@ -18,6 +18,7 @@ import agents
 import memory
 import quant
 import thesis
+import playbook
 
 MC_MIN = float(os.getenv("HUNT_MC_MIN", "15e6"))
 MC_MAX = float(os.getenv("HUNT_MC_MAX", "400e6"))
@@ -202,6 +203,15 @@ def extract_mentions(posts, tweets, universe):
     return res
 
 # ---------------------------------------------------------------- skor
+def _fresh_sm(now):
+    """smartmoney.json manual: hanya entri bertanggal as_of (YYYY-MM-DD) <= 7 hari yang dipakai; tanpa tanggal atau basi diabaikan."""
+    out = {}
+    for k, v in scan._load_json("smartmoney.json", {}).get("coins", {}).items():
+        try: ts = time.mktime(time.strptime(v["as_of"], "%Y-%m-%d"))
+        except Exception: continue
+        if 0 <= now - ts <= 7 * 86400 + 86400: out[k.upper()] = v
+    return out
+
 def _unlocks(sym, now, days=90):
     """Unlock <= 90 hari dari unlocks.json (diisi manual). None bila simbol tidak tercatat."""
     data = scan._load_json("unlocks.json", {})
@@ -416,7 +426,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
     if qdata is None and details is not None: qdata = {}           # tes: tanpa jaringan
     if qdata is None:
         qdata = {"fees": quant.fetch_overview("fees", "dailyFees"), "vol": {**quant.fetch_overview("dexs"), **quant.fetch_overview("derivatives")}, "sm": quant.fetch_smart_money()}
-    qf, qv, qsm = qdata.get("fees", {}), qdata.get("vol", {}), qdata.get("sm", {})
+    qf, qv, qsm = qdata.get("fees", {}), qdata.get("vol", {}), {**qdata.get("sm", {}), **_fresh_sm(now)}
     bb = {e["symbol"].upper(): e for e in scan._load_json("buyback.json", {}).get("events", [])}
     trending = trending if trending is not None else fetch_trending()
     if posts is None: posts, rs = fetch_reddit()
@@ -515,6 +525,12 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
         q = quant.analyze(c, {"tag": tag, "pf_med": pf_med.get(tag), "fees": qf.get(sl), "vol": qv.get(sl), "tvl": c.get("tvl"), "unlocks12": _unlocks(c["symbol"], now, 365),
                               "circ_now": c.get("circ"), "hist": hist.get(c["id"]), "now": now, "sm": qsm.get(c["symbol"])})
         c["quant"] = q
+        u_all = _unlocks(c["symbol"], now, 365); c["unlock_known"] = u_all is not None
+        nxt = []
+        for u in (u_all or []):
+            try: nxt.append({"date": u["date"], "days": int((time.mktime(time.strptime(u["date"], "%Y-%m-%d")) - now) / 86400), "pct_circ": u.get("pct_circ")})
+            except Exception: pass
+        c["unlock_next"] = min(nxt, key=lambda x: x["days"]) if nxt else None
         if q["adjust"]: c["score"] = round(max(0, min(100, c["score"] + q["adjust"])), 1)
         if q["elim"]: c["tier"] = "lemah"
         elif c["tier"] == "prioritas" and c["score"] < 65: c["tier"] = "pantau"
@@ -555,6 +571,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
     if use_llm and th["themes"]:
         for t in th["themes"][:3]:
             t["llm"] = thesis.llm_synthesis(t, llm or agents.anthropic_call)
+    pb = playbook.build(cands, th, now)
     gaps = ["Arkham/Solscan/Birdeye berbayar atau butuh kunci: pelacakan paus dan pool Solana tidak aktif; keamanan kontrak (GoPlus) hanya untuk chain EVM. Agen menandai data yang kosong, tidak mengisinya.",
             "Smart money (100 dompet profit teratas) tidak ada API gratis: aktif hanya bila DUNE_API_KEY + DUNE_QUERY_ID diisi atau smartmoney.json dipasok; jalur Dune belum diuji ke API sungguhan. Net real yield memakai pertumbuhan suplai beredar yang dicatat sejak siklus pertama (butuh >=3 hari).",
             "Konviksi Master Agent murni aturan bila ANTHROPIC_API_KEY tidak ada; dengan kunci, LLM menyetel maksimal +-15 dan tidak bisa membatalkan VETO.",
@@ -568,7 +585,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
             "filters": {"mc_min": MC_MIN, "mc_max": MC_MAX, "vol_min": VOL_MIN},
             "sources": {"coingecko": bool(universe), "defillama": bool(rows or protocols), "reddit": rs, "x": xs, "trending": len(trending), "posts": len(posts), "tweets": len(tweets), "dexscreener": any(c["dex"] for c in cands)},
             "sectors": [{k: v for k, v in s.items()} for s in sectors[:16]], "top_narratives": hot,
-            "candidates": cands[:top], "hist": new_hist, "thesis": th, "learning": mem.summary(), "_mem": mem.to_dict(), "data_gaps": gaps, "manual": seed.get("manual", []), "analyst_notes": seed.get("analyst_notes", []), "seed_asof": seed.get("asof")}
+            "candidates": cands[:top], "hist": new_hist, "thesis": th, "playbook": pb, "learning": mem.summary(), "_mem": mem.to_dict(), "data_gaps": gaps, "manual": seed.get("manual", []), "analyst_notes": seed.get("analyst_notes", []), "seed_asof": seed.get("asof")}
 
 def handoff(res, n=3):
     """Kandidat teratas (prioritas/pantau, punya pool DEX) yang layak dioper ke Scan Institusional (SMC/FVG/OTE)."""
