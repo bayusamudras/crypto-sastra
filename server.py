@@ -9,6 +9,7 @@ Crypto Sastra - Crypto News Intelligence
 Jalankan:  python3 server.py   -> buka http://localhost:8000
 Mode GitHub Actions: python3 server.py --once  -> satu siklus, hasil ditulis ke DATA_DIR/*.json
 """
+import llm as llmx
 import json, os, re, sys, time, threading, hashlib, math, queue, urllib.request, urllib.parse
 import xml.etree.ElementTree as ET
 try:
@@ -244,17 +245,14 @@ def analyze(item):
     return item
 
 def ai_enrich(item):
-    """Opsional: minta Claude untuk analisis lebih dalam (jalan di background)."""
-    if not ANTHROPIC_KEY or item["score"] < 55: return
+    """Opsional: analisis lebih dalam oleh LLM yang terkonfigurasi (Gemini, Groq, OpenRouter, DeepSeek, Mistral, OpenAI, Anthropic), jalan di background."""
+    if not llmx.available() or item["score"] < 55: return
     try:
-        body = json.dumps({"model": "claude-sonnet-5-5", "max_tokens": 600, "messages": [{"role": "user", "content":
+        out = llmx.call([{"role": "user", "content":
             "Kamu analis crypto. Dari berita ini, beri JSON ringkas dengan kunci: ringkasan, dampak_jangka_pendek, risiko, "
-            "skenario_bull, skenario_bear, yang_perlu_dipantau (list). Bahasa Indonesia, tanpa teks lain.\n\n"
-            f"Judul: {item['title']}\nIsi: {item['summary']}\nSumber: {item['source']}\nEvent: {item['event']}"}]}).encode()
-        req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
-            "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-        out = json.loads(urllib.request.urlopen(req, timeout=40).read())
-        item["ai"] = out["content"][0]["text"]
+            "skenario_bull, skenario_bear, yang_perlu_dipantau (list). Bahasa Indonesia, tanpa teks lain. Jangan menambah fakta di luar berita.\n\n"
+            f"Judul: {item['title']}\nIsi: {item['summary']}\nSumber: {item['source']}\nEvent: {item['event']}"}], None, None, 600)
+        item["ai"] = "".join(b.get("text", "") for b in out["content"] if b.get("type") == "text")
         push(item, "update")
     except Exception as e:
         print("ai_enrich gagal:", e)
@@ -321,7 +319,7 @@ def ingest(source, title, summary, url, published, cred):
     if ONCE:                                   # mode siklus: kerjakan berurutan agar selesai sebelum proses berhenti
         global AI_LEFT
         if not BOOTSTRAP: maybe_alert(item)
-        if ANTHROPIC_KEY and item["score"] >= 55 and AI_LEFT > 0:
+        if llmx.available() and item["score"] >= 55 and AI_LEFT > 0:
             AI_LEFT -= 1; ai_enrich(item)
     else:
         threading.Thread(target=maybe_alert, args=(item,), daemon=True).start()
@@ -661,5 +659,5 @@ if __name__ == "__main__":
     if not NEWS:
         print("Tidak ada berita live (offline/jaringan diblokir) -> memuat DATA DEMO.")
         seed_demo()
-    print(f"Dashboard: http://localhost:{PORT}  | poll tiap {POLL}s | AI={'on' if ANTHROPIC_KEY else 'off'} | X={'on' if X_BEARER else 'off'} | Telegram={'on (>=' + str(ALERT_MIN) + ')' if TG_TOKEN and TG_CHAT else 'off'}")
+    print(f"Dashboard: http://localhost:{PORT}  | poll tiap {POLL}s | AI={','.join(llmx.available()) or 'off'} | X={'on' if X_BEARER else 'off'} | Telegram={'on (>=' + str(ALERT_MIN) + ')' if TG_TOKEN and TG_CHAT else 'off'}")
     ThreadingHTTPServer(("0.0.0.0", PORT), H).serve_forever()

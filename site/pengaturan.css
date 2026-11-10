@@ -11,3 +11,4 @@
 .stggrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 16px;margin-bottom:6px}.stgprimary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}.stgprimary:hover{color:var(--on-accent);opacity:.9}
 .stgf .field{width:100%;box-sizing:border-box}
 @media(max-width:560px){.stghead h1{font-size:26px}}
+.stgf .field.filled{border-color:var(--up);background:var(--up-soft)}.stgf .field.filled::placeholder{color:var(--up);opacity:1}

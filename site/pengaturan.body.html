@@ -19,8 +19,9 @@
   <p class="stgmsg" id="gMsg" role="status"></p></section>
 
  <section class="panel stgpnl" id="p2" hidden>
-  <h2>API key &amp; rahasia</h2><p class="sub">Isi hanya yang ingin dipasang atau diganti; kolom kosong tidak diubah. Setelah tersimpan, nilainya tidak bisa dibaca lagi dari GitHub.</p>
+  <h2>API key &amp; rahasia</h2><p class="sub">Kolom bertanda <b>✓ terisi</b> sudah tersimpan dan tetap dipakai: biarkan kosong untuk mempertahankan, ketik nilai baru untuk mengganti. Nilai asli tidak bisa dibaca kembali dari GitHub (itu disengaja).</p>
   <div id="sFields" class="stggrid"></div>
+  <label class="chk"><input type="checkbox" id="sAuto" checked> Terapkan otomatis setiap kali menyimpan (kunci langsung dipakai pengumpul dan data diperbarui)</label>
   <div class="stgrow"><button class="btnl stgprimary" id="sSave" type="button">Simpan ke GitHub Secrets</button><button class="btnl" id="sRestart" type="button">Terapkan: mulai ulang pengumpul</button></div>
   <p class="stgmsg" id="sMsg" role="status"></p><div id="sStatus"></div></section>
 

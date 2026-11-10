@@ -15,6 +15,7 @@ import xml.etree.ElementTree as ET
 import scan  # memakai jget, TIER1, BACKERS, _load_json
 import narrative
 import agents
+import llm as llmx
 import memory
 import quant
 import thesis
@@ -539,7 +540,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
     injected = details is not None
     if tools is None and not injected: tools = agents.default_tools()
     if mem is None: mem = memory.Memory()
-    if use_llm is None: use_llm = bool(agents.ANTHROPIC_KEY) and not injected
+    if use_llm is None: use_llm = bool(llmx.available()) and not injected
     mem.record_sectors(sectors, now)
     if tools is not None:
         for c in cands[:(agent_n if agent_n is not None else agents.AGENT_N)]:
@@ -571,11 +572,11 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
                       {k.upper(): v for k, v in scan._load_json("thesis_events.json", {}).get("stablecoin_meta", {}).items()}, now)
     if use_llm and th["themes"]:
         for t in th["themes"][:3]:
-            t["llm"] = thesis.llm_synthesis(t, llm or agents.anthropic_call)
+            t["llm"] = thesis.llm_synthesis(t, llm or llmx.call); t["llm_provider"] = llmx.LAST.get("provider") if t["llm"] else None
     pb = playbook.build(cands, th, now)
     gaps = ["Arkham/Solscan/Birdeye berbayar atau butuh kunci: pelacakan paus dan pool Solana tidak aktif; keamanan kontrak (GoPlus) hanya untuk chain EVM. Agen menandai data yang kosong, tidak mengisinya.",
             "Smart money (100 dompet profit teratas) tidak ada API gratis: aktif hanya bila DUNE_API_KEY + DUNE_QUERY_ID diisi atau smartmoney.json dipasok; jalur Dune belum diuji ke API sungguhan. Net real yield memakai pertumbuhan suplai beredar yang dicatat sejak siklus pertama (butuh >=3 hari).",
-            "Konviksi Master Agent murni aturan bila ANTHROPIC_API_KEY tidak ada; dengan kunci, LLM menyetel maksimal +-15 dan tidak bisa membatalkan VETO.",
+            "Konviksi Master Agent murni aturan bila tidak ada kunci LLM (Gemini/Groq/OpenRouter/DeepSeek/Mistral/OpenAI/Anthropic); dengan kunci, LLM menyetel maksimal +-15 dan tidak bisa membatalkan VETO.",
             "DAU / wallet aktif tidak tersedia gratis: pertumbuhan penggunaan diproksikan dari tren fee 7 hari vs 30 hari (DefiLlama). Buyback otomatis hanya dari rasio pendapatan-holder; model resmi diisi di buyback.json.",
             "Dompet segar / smart money tidak tersedia gratis: akumulasi diproksikan dari rasio beli/jual DEX 24 jam (DexScreener).",
             "Jadwal unlock dan backer Tier-1 tetap manual (unlocks.json, scan.py); isi sebelum mengambil keputusan.",
@@ -586,7 +587,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
             "filters": {"mc_min": MC_MIN, "mc_max": MC_MAX, "vol_min": VOL_MIN},
             "sources": {"coingecko": bool(universe), "defillama": bool(rows or protocols), "reddit": rs, "x": xs, "trending": len(trending), "posts": len(posts), "tweets": len(tweets), "dexscreener": any(c["dex"] for c in cands)},
             "sectors": [{k: v for k, v in s.items()} for s in sectors[:16]], "top_narratives": hot,
-            "candidates": cands[:top], "hist": new_hist, "thesis": th, "playbook": pb, "learning": mem.summary(), "_mem": mem.to_dict(), "data_gaps": gaps, "manual": seed.get("manual", []), "analyst_notes": seed.get("analyst_notes", []), "seed_asof": seed.get("asof")}
+            "candidates": cands[:top], "hist": new_hist, "thesis": th, "playbook": pb, "llm_status": llmx.status(), "learning": mem.summary(), "_mem": mem.to_dict(), "data_gaps": gaps, "manual": seed.get("manual", []), "analyst_notes": seed.get("analyst_notes", []), "seed_asof": seed.get("asof")}
 
 def handoff(res, n=3):
     """Kandidat teratas (prioritas/pantau, punya pool DEX) yang layak dioper ke Scan Institusional (SMC/FVG/OTE)."""

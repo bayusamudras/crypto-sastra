@@ -14,11 +14,10 @@ Tanpa dependensi (urllib). Semua alat tidak pernah melempar galat: gagal = None 
 Aturan keras: temuan keamanan berstatus VETO tidak bisa dibatalkan oleh LLM maupun skor lain.
 """
 import json, math, os, re, time, urllib.parse, urllib.request
+import llm as llmx
 
 UA = {"User-Agent": "CryptoSastra/1.0"}
 GH_TOKEN = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN", "")
-ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-MODEL = os.getenv("ANTHROPIC_MODEL", "claude-haiku-5-5")
 AGENT_N = int(os.getenv("AGENT_N", "8"))            # kandidat teratas yang diperiksa dewan agen per siklus
 LLM_N = int(os.getenv("MASTER_LLM_N", "5"))         # dari itu, berapa yang juga dinalar LLM (hemat biaya)
 CHAIN_IDS = {"ethereum": 1, "bsc": 56, "base": 8453, "arbitrum": 42161, "polygon": 137, "avalanche": 43114, "optimism": 10}
@@ -120,13 +119,7 @@ def default_tools():
     return {"security": tool_security, "github": tool_github, "yield": tool_yield, "doc": tool_doc}
 
 # ---------------------------------------------------------------- LLM (opsional): Anthropic Messages API dengan tool use
-def anthropic_call(messages, tools=None, system=None, max_tokens=900):
-    body = {"model": MODEL, "max_tokens": max_tokens, "messages": messages}
-    if system: body["system"] = system
-    if tools: body["tools"] = tools
-    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(), method="POST",
-                                 headers={"content-type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "User-Agent": UA["User-Agent"]})
-    with urllib.request.urlopen(req, timeout=60) as r: return json.loads(r.read())
+anthropic_call = llmx.call   # nama lama dipertahankan; kini memilih penyedia sesuai konfigurasi
 
 LLM_TOOLS = [
     {"name": "security_report", "description": "Laporan keamanan kontrak token (honeypot, mint, pajak, holder, kunci LP) dari GoPlus.",
@@ -153,7 +146,7 @@ SYSTEM = ("Kamu Master Agent riset altcoin kecil. Kamu menerima laporan sub-agen
 
 def master_llm(cand, reports, lessons, tools, llm=None, max_turns=4):
     """Penalaran LLM atas laporan sub-agent; boleh memanggil alat. -> {"adjust","thesis","red_flags","verify"} atau None."""
-    llm = llm or (anthropic_call if ANTHROPIC_KEY else None)
+    llm = llm or llmx.default()
     if not llm: return None
     brief = {"symbol": cand["symbol"], "name": cand["name"], "mc": cand.get("mc"), "score": cand.get("score"), "sector": (cand.get("sector") or {}).get("tag"),
              "pe": cand.get("ps"), "fdv_mc": cand.get("fdv_mc"), "chain": (cand.get("dex") or {}).get("chain"), "address": (cand.get("dex") or {}).get("address"),
@@ -182,7 +175,7 @@ def master_llm(cand, reports, lessons, tools, llm=None, max_turns=4):
 
 def doc_summary(url, tools, llm=None):
     """Whitepaper/model bisnis lewat LLM: utilitas token, skema bagi hasil, product-market fit. None bila LLM/dokumen tidak tersedia."""
-    llm = llm or (anthropic_call if ANTHROPIC_KEY else None)
+    llm = llm or llmx.default()
     if not llm: return None
     text = tools.get("doc", lambda u: None)(url)
     if not text: return None
@@ -350,6 +343,6 @@ def run_council(c, tools, mem=None, gh_fn=None, llm=None, use_llm=False, trend=N
     out = master(c, reports, lessons)
     if use_llm:
         lo = master_llm(c, [{k: r[k] for k in ("agent", "score", "verdict", "findings", "flags")} for r in out["reports"]], lessons, tools, llm)
-        if lo: out = master(c, reports, lessons, lo)
+        if lo: out = master(c, reports, lessons, lo); out["llm_provider"] = llmx.LAST.get("provider") if llm is None or llm is llmx.call else "kustom"
     out["security"] = sec; out["github"] = gh; out["real_yield"] = yld
     return out
