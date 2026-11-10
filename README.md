@@ -173,3 +173,5 @@ Panel paling atas. Status EKSEKUSI hanya bila semua gerbang lolos: skor >= 65, b
 ## Menu Pengaturan (di web)
 
 Bagian "Pengaturan" di halaman: (1) hubungkan token GitHub fine-grained (izin Secrets, Actions, Contents: read and write, hanya repo ini); (2) tempel API key, dienkripsi di browser dengan libsodium sealed box (tweetnacl + blakejs, hasilnya diuji didekripsi PyNaCl) lalu disimpan ke GitHub Secrets, tombol "Terapkan" menghentikan pengumpul lama dan memulai yang baru supaya secret dipakai; (3) editor file konfigurasi yang melakukan commit ke `main` dan disegarkan pengumpul tiap siklus (`sync_cfg` di `tools/loop.sh`). Token GitHub hanya di memori halaman kecuali opsi "ingat" dicentang. Kunci baru yang didukung: `CG_API_KEY` (CoinGecko demo, header `x-cg-demo-api-key`).
+
+Menu Pengaturan sekarang halaman sendiri: `pengaturan.html` (dibangun `build.py` dari `site/pengaturan.*`, dipublikasikan ke gh-pages bersama `index.html`), dengan tab Koneksi, API key, dan Konfigurasi serta indikator status koneksi.

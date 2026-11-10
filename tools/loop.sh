@@ -35,6 +35,7 @@ publish_pages() {
   local changed=0 now last
   now=$(date +%s); last=$(cat out-pages/.pushed_at 2>/dev/null || echo 0)
   cmp -s static/index.html out-pages/index.html 2>/dev/null || { cp static/index.html out-pages/index.html; changed=1; }
+  cmp -s static/pengaturan.html out-pages/pengaturan.html 2>/dev/null || { cp static/pengaturan.html out-pages/pengaturan.html; changed=1; }
   touch out-pages/.nojekyll
   if [ "$changed" = 1 ] || [ $(( now - last )) -ge "$PAGES_EVERY" ]; then
     rm -rf out-pages/data; cp -r out-data/data out-pages/data

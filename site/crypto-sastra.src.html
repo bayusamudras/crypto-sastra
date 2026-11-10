@@ -282,10 +282,6 @@ footer p{margin:0;max-width:78ch}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:40}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
-.stg h2{margin:0 0 4px}.stgd{border-top:1px solid var(--line);padding:10px 0}.stgd>summary{cursor:pointer;font-weight:600;font-size:15px;list-style:none}.stgd>summary::-webkit-details-marker{display:none}
-.stgol{margin:8px 0;padding-left:20px;font-size:13.5px;color:var(--mut)}.stgrow{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.stgrow .field{flex:1 1 180px}
-.stgf{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;margin-bottom:12px}.stgf label{font-size:13.5px;font-weight:600}.stgf small{color:var(--mut);font-size:12.5px}.stgf .ok{color:var(--up)}
-.stgmsg{font-size:13.5px;min-height:1.2em;margin:6px 0}.stgmsg.err{color:var(--dn)}.stgmsg.good{color:var(--up)}
 </style>
 
 <header class="top">
@@ -295,7 +291,7 @@ footer p{margin:0;max-width:78ch}
       <span class="wordmark">Crypto <em>Sastra</em></span>
     </a>
     <nav class="nav" aria-label="Navigasi">
-      <a href="#hunter">Hunter</a><a href="#radar-top">Radar</a><a href="#top5">Top 5</a><a href="#akurasi">Akurasi</a><a href="#scan">Scan</a><a href="#pengaturan">Pengaturan</a><a href="#cara-kerja">Cara kerja</a>
+      <a href="#hunter">Hunter</a><a href="#radar-top">Radar</a><a href="#top5">Top 5</a><a href="#akurasi">Akurasi</a><a href="#scan">Scan</a><a href="pengaturan.html">Pengaturan</a><a href="#cara-kerja">Cara kerja</a>
     </nav>
     <div class="sp"></div>
     <span class="live" id="live"><i></i><span id="liveTxt">menghubungkan…</span></span>
@@ -396,28 +392,6 @@ footer p{margin:0;max-width:78ch}
   <div id="scanOut"><div class="scanwait">Memuat daftar scan…</div></div>
 </section>
 
-<section class="wrap" id="pengaturan" aria-label="Pengaturan" style="padding-top:18px">
- <div class="panel stg">
-  <h2>Pengaturan: API key &amp; konfigurasi</h2>
-  <p class="sub">Tempel kunci di sini; browser Anda mengenkripsinya lalu menyimpannya ke GitHub Secrets repo Anda. Kunci tidak disimpan di file repo dan tidak dikirim ke tempat lain. Satu kali saja Anda perlu membuat token GitHub (langkah 1), setelah itu semua dari halaman ini.</p>
-  <details class="stgd" open><summary>1. Hubungkan ke GitHub</summary>
-   <ol class="stgol"><li>Buka <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">pembuat token</a>. Pilih <b>Only select repositories</b> lalu repo crypto-sastra, masa berlaku 90 hari.</li>
-   <li>Repository permissions: <b>Secrets: Read and write</b>, <b>Actions: Read and write</b>, <b>Contents: Read and write</b>. Generate lalu salin.</li><li>Tempel di bawah. Token hanya dikirim ke api.github.com dan hanya hidup di memori halaman ini (hilang saat halaman ditutup), kecuali Anda mencentang "ingat".</li></ol>
-   <div class="stgrow"><input class="field" id="gOwner" placeholder="pemilik repo" autocomplete="off"><input class="field" id="gRepo" placeholder="nama repo" autocomplete="off"></div>
-   <div class="stgrow"><input class="field" id="gTok" type="password" placeholder="token GitHub (github_pat_…)" autocomplete="off" spellcheck="false"><button class="btnl" id="gTest" type="button">Tes koneksi</button></div>
-   <label class="chk"><input type="checkbox" id="gRemember"> Ingat token di perangkat ini (tersimpan di browser; domain github.io dipakai bersama semua situs Anda, jadi aktifkan hanya di perangkat pribadi)</label>
-   <p class="mut stgmsg" id="gMsg" role="status"></p></details>
-  <details class="stgd" open><summary>2. API key &amp; rahasia</summary>
-   <p class="sub" style="margin:6px 0 10px">Isi hanya yang ingin dipasang atau diganti. Kolom kosong tidak diubah. Setelah tersimpan kolom dikosongkan dan nilainya tidak bisa dibaca lagi dari GitHub.</p>
-   <div id="sFields"></div>
-   <div class="stgrow"><button class="btnl" id="sSave" type="button">Simpan ke GitHub Secrets</button><button class="btnl" id="sRestart" type="button">Terapkan: mulai ulang pengumpul</button></div>
-   <p class="mut stgmsg" id="sMsg" role="status"></p><div id="sStatus"></div></details>
-  <details class="stgd"><summary>3. Edit file konfigurasi (unlock, tesis, smart money, katalis, buyback, makro, founder)</summary>
-   <p class="sub" style="margin:6px 0 10px">Perubahan disimpan sebagai commit ke branch main dan dibaca pengumpul pada siklus berikutnya (sekitar 3 menit), tanpa mulai ulang.</p>
-   <div class="stgrow"><select class="field" id="cFile"></select><button class="btnl" id="cLoad" type="button">Muat</button><button class="btnl" id="cTpl" type="button">Sisipkan contoh baris</button></div>
-   <textarea class="field" id="cText" rows="14" spellcheck="false" style="width:100%;font:13px var(--f-mono);margin-top:8px" placeholder="Muat file dulu"></textarea>
-   <div class="stgrow"><button class="btnl" id="cSave" type="button">Simpan perubahan</button></div><p class="mut stgmsg" id="cMsg" role="status"></p></details>
- </div></section>
 <section class="how" id="cara-kerja">
   <div class="wrap">
     <h2>Dari berita mentah ke keputusan, dengan catatan hasilnya</h2>
@@ -952,57 +926,5 @@ setInterval(()=>{renderStats();renderFeed()},60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'||S.demo)return;
   if(S.static){refreshStatic();initHuntQuiet()}else{loadSide();initHuntQuiet()}});
 init();
-})();
-</script>
-<script>/*SEALEDBOX*/</script>
-<script>
-(function(){
-const $=id=>document.getElementById(id);
-const FIELDS=[['ANTHROPIC_API_KEY','Anthropic API key','Penalaran LLM Master Agent dan sintesis tesis (opsional, berbayar per pemakaian).',1],
- ['CG_API_KEY','CoinGecko Demo API key','Gratis di coingecko.com/en/api. Mengatasi pengayaan detail yang hanya 2 dari 20 kandidat karena batas laju.',1],
- ['DUNE_API_KEY','Dune API key','Untuk smart money (kunci gratis tersedia di dune.com).',1],['DUNE_QUERY_ID','Dune Query ID','Angka ID query Anda (kolom: symbol, net_flow_usd_7d, net_flow_usd_14d, wallets_buying, wallets_selling).',0],
- ['X_BEARER_TOKEN','X (Twitter) Bearer token','Sinyal sosial dari X; API X berbayar.',1],['X_ANALYSTS','Akun analis X','Pisahkan dengan koma, tanpa @. Contoh: LarkDavis,AltcoinGordon',0],
- ['CRYPTOPANIC_KEY','CryptoPanic key','Sumber berita tambahan (opsional).',1],
- ['TELEGRAM_BOT_TOKEN','Telegram bot token','Alert ke Telegram. Gunakan token baru; yang lama sudah bocor di chat.',1],['TELEGRAM_CHAT_ID','Telegram chat ID','ID chat tujuan alert.',0]];
-const FILES=['thesis_events.json','smartmoney.json','unlocks.json','catalysts.json','buyback.json','macro.json','founders.json'];
-const TPL={'thesis_events.json':o=>{(o.events=o.events||[]).push({theme:'stablecoin',date:new Date().toISOString().slice(0,10),note:'isi catatan Anda',source:'https://',horizon:'Q1 2027'})},
- 'smartmoney.json':o=>{(o.coins=o.coins||{}).SIMBOL={net_flow_usd_7d:0,net_flow_usd_14d:0,wallets_buying:0,wallets_selling:0,as_of:new Date().toISOString().slice(0,10)}},
- 'unlocks.json':o=>{o.SIMBOL=[{date:'2027-01-01',pct_circ:5,note:'isi'}]},'catalysts.json':o=>{(o.events=o.events||[]).push({symbol:'SIMBOL',date:'2027-01-01',type:'listing',polarity:1,note:'isi',source:'https://'})}};
-const st={sha:null};
-const sf=$('sFields');sf.innerHTML=FIELDS.map(f=>`<div class="stgf"><label for="f_${f[0]}">${f[0]} <span class="stgset" data-n="${f[0]}"></span></label><input class="field" id="f_${f[0]}" type="${f[3]?'password':'text'}" autocomplete="off" spellcheck="false" placeholder="${f[1]}"><small>${f[2]}</small></div>`).join('');
-$('cFile').innerHTML=FILES.map(f=>`<option>${f}</option>`).join('');
-try{const m=location.hostname.match(/^([^.]+)\.github\.io$/),r=location.pathname.split('/')[1];
- $('gOwner').value=localStorage.getItem('cs_owner')||(m?m[1]:'');$('gRepo').value=localStorage.getItem('cs_repo')||(r||'crypto-sastra');
- const t=localStorage.getItem('cs_tok');if(t){$('gTok').value=t;$('gRemember').checked=true}}catch(e){$('gRepo').value='crypto-sastra'}
-const say=(id,t,k)=>{const e=$(id);e.textContent=t;e.className='mut stgmsg'+(k?' '+k:'')};
-const B64={enc:s=>{const b=new TextEncoder().encode(s);let x='';b.forEach(c=>x+=String.fromCharCode(c));return btoa(x)},dec:s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')),c=>c.charCodeAt(0)))};
-function cfg(){const o=$('gOwner').value.trim(),r=$('gRepo').value.trim(),t=$('gTok').value.trim();if(!o||!r||!t)throw new Error('Isi pemilik, nama repo, dan token GitHub di langkah 1.');
- try{localStorage.setItem('cs_owner',o);localStorage.setItem('cs_repo',r);if($('gRemember').checked)localStorage.setItem('cs_tok',t);else localStorage.removeItem('cs_tok')}catch(e){}
- return {o,r,t}}
-async function gh(method,path,body){const c=cfg();
- const r=await fetch('https://api.github.com/repos/'+c.o+'/'+c.r+path,{method,headers:{'Authorization':'Bearer '+c.t,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
- if(r.status===204)return {};let j={};try{j=await r.json()}catch(e){}
- if(!r.ok){const m=j.message||('HTTP '+r.status);throw new Error(r.status===401?'Token ditolak (salah atau kedaluwarsa).':r.status===403||r.status===404?m+' — periksa izin token (Secrets, Actions, Contents: read and write) dan bahwa repo dipilih.':m)}
- return j}
-async function listSecrets(){try{const j=await gh('GET','/actions/secrets?per_page=100');const have=new Set((j.secrets||[]).map(s=>s.name));
- document.querySelectorAll('.stgset').forEach(e=>{const on=have.has(e.dataset.n);e.textContent=on?'✓ terpasang':'· belum';e.className='stgset '+(on?'ok':'')});return have}catch(e){return null}}
-$('gTest').onclick=async()=>{say('gMsg','Menguji…');try{const r=await gh('GET','');const h=await listSecrets();say('gMsg','Terhubung ke '+r.full_name+(h?' · '+h.size+' secret terpasang.':'. Izin Secrets belum cukup.'),'good')}catch(e){say('gMsg',e.message,'err')}};
-$('sSave').onclick=async()=>{
- const vals=FIELDS.map(f=>[f[0],$('f_'+f[0]).value.trim()]).filter(x=>x[1]);if(!vals.length){say('sMsg','Tidak ada kolom yang diisi.','err');return}
- say('sMsg','Mengambil kunci enkripsi repo…');
- try{const pk=await gh('GET','/actions/secrets/public-key');const done=[];
-  for(const [n,v] of vals){await gh('PUT','/actions/secrets/'+n,{encrypted_value:SB.seal(v,pk.key),key_id:pk.key_id});done.push(n);$('f_'+n).value=''}
-  say('sMsg','Tersimpan: '+done.join(', ')+'. Tekan "Terapkan" agar pengumpul memakainya sekarang.','good');listSecrets()}catch(e){say('sMsg',e.message,'err')}};
-$('sRestart').onclick=async()=>{say('sMsg','Menghentikan pengumpul lama…');
- try{let n=0;for(const s of ['in_progress','queued']){const j=await gh('GET','/actions/workflows/collect.yml/runs?status='+s+'&per_page=20');for(const r of j.workflow_runs||[]){try{await gh('POST','/actions/runs/'+r.id+'/cancel');n++}catch(e){}}}
-  await new Promise(r=>setTimeout(r,6000));await gh('POST','/actions/workflows/collect.yml/dispatches',{ref:'main'});
-  say('sMsg','Pengumpul baru dimulai ('+n+' proses lama dihentikan). Data baru muncul dalam beberapa menit.','good');setTimeout(showRuns,8000)}catch(e){say('sMsg',e.message,'err')}};
-async function showRuns(){try{const j=await gh('GET','/actions/workflows/collect.yml/runs?per_page=3');$('sStatus').innerHTML='<p class="mut" style="font-size:13px;margin:6px 0">Proses terakhir: '+(j.workflow_runs||[]).map(r=>r.status+(r.conclusion?'/'+r.conclusion:'')+' ('+new Date(r.created_at).toLocaleTimeString('id-ID')+')').join(' · ')+'</p>'}catch(e){}}
-$('cLoad').onclick=async()=>{const f=$('cFile').value;say('cMsg','Memuat…');try{const j=await gh('GET','/contents/'+f+'?ref=main');st.sha=j.sha;$('cText').value=B64.dec(j.content);say('cMsg',f+' dimuat.')}catch(e){say('cMsg',e.message,'err')}};
-$('cTpl').onclick=()=>{const f=$('cFile').value;try{const o=JSON.parse($('cText').value||'{}');(TPL[f]||(()=>{throw new Error('Tidak ada contoh untuk file ini.')}))(o);$('cText').value=JSON.stringify(o,null,1);say('cMsg','Baris contoh ditambahkan: ganti isinya lalu simpan.')}catch(e){say('cMsg',e.message,'err')}};
-$('cSave').onclick=async()=>{const f=$('cFile').value;let o;try{o=JSON.parse($('cText').value)}catch(e){say('cMsg','JSON tidak valid: '+e.message,'err');return}
- if(!st.sha){say('cMsg','Muat file dulu sebelum menyimpan.','err');return}
- say('cMsg','Menyimpan…');try{const j=await gh('PUT','/contents/'+f,{message:'config via web: '+f,content:B64.enc(JSON.stringify(o,null,1)+'\n'),sha:st.sha,branch:'main'});st.sha=j.content.sha;say('cMsg',f+' tersimpan. Dibaca pengumpul pada siklus berikutnya.','good')}catch(e){say('cMsg',e.message,'err')}};
-$('cFile').onchange=()=>{st.sha=null;$('cText').value=''};
 })();
 </script>
