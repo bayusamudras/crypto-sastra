@@ -17,7 +17,7 @@ LLM_PROVIDER : urutan prioritas, dipisah koma (default: yang gratis dulu). Bila 
 LLM_MODELS   : override model, contoh "groq=llama-3.3-70b-versatile,gemini=gemini-2.5-flash".
 Nama model bawaan bisa usang: ganti lewat LLM_MODELS bila penyedia menolaknya.
 """
-import json, os, urllib.request
+import json, os, urllib.error, urllib.request
 
 UA = "CryptoSastra/1.0"
 REG = {  # nama: (env kunci, endpoint, model bawaan)
@@ -81,6 +81,23 @@ def _post(url, body, headers, timeout=60):
     req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST", headers={"content-type": "application/json", "User-Agent": UA, **headers})
     with urllib.request.urlopen(req, timeout=timeout) as r: return json.loads(r.read())
 
+_PICKED = {}
+def discover_model(p, key):
+    """Model bawaan ditolak (404/400): minta daftar model dari penyedia dan pilih yang cocok (flash untuk Gemini, llama 70B untuk Groq)."""
+    if p in _PICKED: return _PICKED[p]
+    base = REG[p][1].rsplit("/chat/completions", 1)[0]
+    req = urllib.request.Request(base + "/models", headers={"Authorization": "Bearer " + key, "User-Agent": UA})
+    with urllib.request.urlopen(req, timeout=20) as r: ids = [m.get("id", "").replace("models/", "") for m in json.loads(r.read()).get("data", [])]
+    bad = ("lite", "preview", "exp", "image", "tts", "embed", "vision", "audio", "live", "thinking", "guard", "whisper")
+    def ver(s):
+        import re
+        return [int(x) for x in re.findall(r"\d+", s)][:3] or [0]
+    if p == "gemini": c = [i for i in ids if "flash" in i and i.startswith("gemini") and not any(b in i for b in bad)]
+    elif p == "groq": c = [i for i in ids if "llama" in i and "70b" in i and not any(b in i for b in bad)]
+    else: c = []
+    if not c: raise RuntimeError("tidak menemukan model yang cocok di daftar penyedia")
+    _PICKED[p] = sorted(c, key=ver)[-1]; print(f"llm {p}: model bawaan ditolak, memakai {_PICKED[p]}"); return _PICKED[p]
+
 def call_provider(p, messages, tools=None, system=None, max_tokens=900):
     env, url, _ = REG[p]; key = os.getenv(env, "").strip(); model = model_for(p)
     if p == "anthropic":
@@ -89,11 +106,16 @@ def call_provider(p, messages, tools=None, system=None, max_tokens=900):
         if tools: body["tools"] = tools
         return _post(url, body, {"x-api-key": key, "anthropic-version": "2023-06-01"})
     msgs, ot = to_openai(messages, tools, system)
+    model = _PICKED.get(p, model)
     body = {"model": model, "messages": msgs, "max_tokens": max_tokens}
     if ot: body["tools"] = ot
     hdr = {"Authorization": "Bearer " + key}
     if p == "openrouter": hdr["X-Title"] = "Crypto Sastra"
-    return from_openai(_post(url, body, hdr))
+    try: return from_openai(_post(url, body, hdr))
+    except urllib.error.HTTPError as e:
+        if e.code in (400, 404) and p in ("gemini", "groq") and not any(kv.split("=", 1)[0].strip().lower() == p for kv in os.getenv("LLM_MODELS", "").split(",") if "=" in kv):
+            body["model"] = discover_model(p, key); return from_openai(_post(url, body, hdr))
+        raise
 
 def call(messages, tools=None, system=None, max_tokens=900):
     """Coba penyedia terkonfigurasi sesuai urutan; yang pertama berhasil dipakai. Gagal semua -> galat terakhir dilempar."""

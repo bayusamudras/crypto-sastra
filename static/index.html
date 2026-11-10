@@ -837,6 +837,15 @@ function renderFresh(){
   const b=$('#freshNow');if(b)b.onclick=ev=>{ev.preventDefault();refreshAll()}}
 async function loadHeartbeat(){if(!S.static||S.demo)return;try{S.live=await fjs('data/live.json')}catch(e){}}
 async function refreshAll(){toast('Menyegarkan…');if(S.static){await refreshStatic()}await initHuntQuiet();liveTick();renderFresh()}
+function smWhy(d){
+  const s=d.sm_status;if(!s)return 'Aktifkan lewat DUNE_API_KEY + DUNE_QUERY_ID di Pengaturan, atau isi smartmoney.json (maks 7 hari).';
+  const dn=s.dune||{};
+  if(dn.configured){
+    if(dn.error)return 'Dune terhubung tetapi bermasalah: '+esc(dn.error)+'. Query harus mengembalikan kolom symbol dan net_flow_usd_7d.';
+    if(!dn.rows)return 'Dune terhubung tetapi query mengembalikan 0 baris. Jalankan/ekseskusi query itu di Dune dulu.';
+    return 'Dune mengembalikan '+dn.rows+' baris, tetapi tidak ada simbolnya yang cocok dengan '+(d.candidates||[]).length+' kandidat saat ini (cocok: '+(s.matched||0)+'). Query perlu memuat simbol token kecil yang dipindai Hunter.'}
+  if(dn.key||dn.query_id)return 'Dune belum lengkap: '+(dn.key?'':'DUNE_API_KEY belum terisi. ')+(dn.query_id?'':'DUNE_QUERY_ID belum terisi.');
+  return 'Belum ada sumber: isi DUNE_API_KEY + DUNE_QUERY_ID di Pengaturan, atau smartmoney.json (maks 7 hari; terisi '+(s.manual||0)+' koin).'}
 function renderExec(d){
   const el=$('#execBox');if(!el)return;const pb=d.playbook;
   if(!pb){el.innerHTML='<h2>Papan eksekusi</h2><p class="sub">Belum tersedia: data Hunter versi lama atau belum dimuat. Tunggu siklus berikutnya.</p>';return}
@@ -852,7 +861,7 @@ function renderExec(d){
     <p style="margin:8px 0 0;font-size:13.5px">${esc(x.plan.size_text)}</p></div></div></details>`;
   const ex=pb.execute||[],wt=pb.waiting||[];
   el.innerHTML=`<h2>Papan eksekusi</h2><div class="stgrow" style="display:flex;gap:8px;align-items:center;margin:0 0 10px"><label class="mut" style="font-size:13.5px" for="execCap">Modal Anda ($)</label><input class="field" id="execCap" type="number" min="0" inputmode="decimal" style="width:130px" value="${+store.get('cs.cap',0)||''}" placeholder="mis. 1000"></div><p class="sub">Koin lolos hanya bila SEMUA gerbang terpenuhi, termasuk konfirmasi smart money dan narasi on-chain. Level keluar adalah aturan baku, bukan level struktur pasar: cocokkan dengan Scan SMC. Bahan riset, bukan nasihat keuangan.</p>
-   ${pb.smart_money_active?'':'<div class="scanwait" style="margin-bottom:10px"><b>Data smart money belum aktif.</b> Tanpa konfirmasi itu tidak ada koin yang boleh berstatus EKSEKUSI. Aktifkan lewat secrets DUNE_API_KEY dan DUNE_QUERY_ID, atau isi smartmoney.json (maks 7 hari).</div>'}
+   ${pb.smart_money_active?'':'<div class="scanwait" style="margin-bottom:10px"><b>Data smart money belum aktif.</b> Tanpa konfirmasi itu tidak ada koin yang boleh berstatus EKSEKUSI.<br>'+smWhy(d)+'</div>'}
    ${ex.length?ex.map((x,i)=>card(x,i===0)).join(''):`<div class="scanwait" style="margin-bottom:10px">Tidak ada koin yang lolos semua gerbang saat ini (${pb.n_checked||0} kandidat diperiksa). Itu hasil yang wajar: lebih baik tidak masuk daripada masuk tanpa konfirmasi.</div>`}
    ${wt.length?`<h3 style="margin:14px 0 8px;font-size:15px">Menunggu konfirmasi</h3>`+wt.map(x=>card(x,false)).join(''):''}${renderAlertsBox()}`;
   const cp=$('#execCap');if(cp)cp.onchange=()=>{store.set('cs.cap',Math.max(0,+cp.value||0));renderExec(H.data)};applyLive()}

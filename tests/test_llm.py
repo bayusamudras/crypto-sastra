@@ -41,3 +41,22 @@ def test_anthropic_native_path():
     orig = llm._post; llm._post = fake
     try: llm.call([{"role": "user", "content": "x"}], None, "s"); assert got["h"]["x-api-key"] == "a" and got["b"]["system"] == "s" and "anthropic.com" in got["url"]
     finally: llm._post = orig; clean()
+
+def test_gemini_model_discovery_on_404():
+    import urllib.error, io
+    clean(); os.environ["GEMINI_API_KEY"] = "m"; llm._PICKED.clear(); seen = []
+    def fake(url, body, headers, timeout=60):
+        seen.append(body["model"])
+        if body["model"] == "gemini-2.5-flash": raise urllib.error.HTTPError(url, 404, "nf", {}, io.BytesIO(b""))
+        return {"choices": [{"message": {"content": "ok"}}]}
+    class R:
+        def __init__(s, d): s.d = d
+        def read(s): return s.d
+        def __enter__(s): return s
+        def __exit__(s, *a): pass
+    orig, ou = llm._post, llm.urllib.request.urlopen; llm._post = fake
+    llm.urllib.request.urlopen = lambda req, timeout=20: R(json.dumps({"data": [{"id": "models/gemini-3.0-flash"}, {"id": "models/gemini-3.0-flash-lite"}, {"id": "models/gemini-2.9-flash"}, {"id": "models/gemini-3.0-pro"}, {"id": "models/gemini-3.0-flash-image"}]}).encode())
+    try:
+        r = llm.call([{"role": "user", "content": "x"}]); assert r["content"][0]["text"] == "ok" and seen[-1] == "gemini-3.0-flash"
+        llm.call([{"role": "user", "content": "x"}]); assert seen[-1] == "gemini-3.0-flash" and seen.count("gemini-2.5-flash") == 1   # dipakai ulang tanpa menebak lagi
+    finally: llm._post = orig; llm.urllib.request.urlopen = ou; llm._PICKED.clear(); clean()

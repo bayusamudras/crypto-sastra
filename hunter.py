@@ -587,7 +587,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
             "filters": {"mc_min": MC_MIN, "mc_max": MC_MAX, "vol_min": VOL_MIN},
             "sources": {"coingecko": bool(universe), "defillama": bool(rows or protocols), "reddit": rs, "x": xs, "trending": len(trending), "posts": len(posts), "tweets": len(tweets), "dexscreener": any(c["dex"] for c in cands)},
             "sectors": [{k: v for k, v in s.items()} for s in sectors[:16]], "top_narratives": hot,
-            "candidates": cands[:top], "hist": new_hist, "thesis": th, "playbook": pb, "llm_status": llmx.status(), "learning": mem.summary(), "_mem": mem.to_dict(), "data_gaps": gaps, "manual": seed.get("manual", []), "analyst_notes": seed.get("analyst_notes", []), "seed_asof": seed.get("asof")}
+            "candidates": cands[:top], "hist": new_hist, "thesis": th, "playbook": pb, "llm_status": llmx.status(), "sm_status": dict(quant.SM_STATUS, matched=sum(1 for c in cands if ((c.get("quant") or {}).get("smart_money") or {}).get("status", "n/a") != "n/a"), manual=len(_fresh_sm(now))), "learning": mem.summary(), "_mem": mem.to_dict(), "data_gaps": gaps, "manual": seed.get("manual", []), "analyst_notes": seed.get("analyst_notes", []), "seed_asof": seed.get("asof")}
 
 def handoff(res, n=3):
     """Kandidat teratas (prioritas/pantau, punya pool DEX) yang layak dioper ke Scan Institusional (SMC/FVG/OTE)."""

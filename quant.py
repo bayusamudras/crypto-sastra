@@ -40,16 +40,22 @@ def fetch_overview(kind, data_type=None):
         out[k] = {"d1": p.get("total24h"), "d7": p.get("total7d"), "d30": p.get("total30d"), "ch30": (ch / 100.0) if ch is not None else None}
     return out
 
+SM_STATUS = {"dune": {"configured": False, "rows": 0, "error": None}, "manual": 0}
+
 def fetch_smart_money():
     """Net flow dompet smart money per simbol. Sumber (urutan): Dune (DUNE_API_KEY + DUNE_QUERY_ID; kolom symbol, net_flow_usd_7d,
     net_flow_usd_14d, wallets_buying, wallets_selling), lalu smartmoney.json (ekspor manual dari Nansen/Arkham/Dune). Tanpa keduanya: {}."""
     out = {}
-    if DUNE_KEY and DUNE_QUERY:
+    d = os.getenv("DUNE_API_KEY", DUNE_KEY); qid = os.getenv("DUNE_QUERY_ID", DUNE_QUERY).strip()
+    SM_STATUS["dune"] = {"configured": bool(d and qid), "key": bool(d), "query_id": bool(qid), "rows": 0, "error": None}
+    if d and qid:
         try:
-            rows = _j(f"https://api.dune.com/api/v1/query/{DUNE_QUERY}/results", {"X-Dune-API-Key": DUNE_KEY}).get("result", {}).get("rows", [])
+            rows = _j(f"https://api.dune.com/api/v1/query/{qid}/results", {"X-Dune-API-Key": d}).get("result", {}).get("rows", [])
+            SM_STATUS["dune"]["rows"] = len(rows)
+            if rows and not any("symbol" in r and "net_flow_usd_7d" in r for r in rows[:5]): SM_STATUS["dune"]["error"] = "kolom wajib tidak ada (symbol, net_flow_usd_7d)"
             for r in rows:
                 if r.get("symbol"): out[str(r["symbol"]).upper()] = {k: r.get(k) for k in ("net_flow_usd_7d", "net_flow_usd_14d", "wallets_buying", "wallets_selling")}
-        except Exception as e: print("quant: Dune gagal:", e)
+        except Exception as e: SM_STATUS["dune"]["error"] = str(e)[:100]; print("quant: Dune gagal:", e)
     return out
 
 # ---------------------------------------------------------------- 1. valuasi relatif sektor

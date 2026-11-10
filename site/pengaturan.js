@@ -53,12 +53,16 @@ $('sSave').onclick=async()=>{
  say('sMsg','Mengambil kunci enkripsi repo…');
  try{const pk=await gh('GET','/actions/secrets/public-key');const done=[];
   for(const [n,v] of vals){await gh('PUT','/actions/secrets/'+n,{encrypted_value:SB.seal(v,pk.key),key_id:pk.key_id});done.push(n);SET.add(n);$('f_'+n).value=''}persistSet();markSet();
-  say('sMsg','Tersimpan: '+done.join(', ')+'.'+($('sAuto').checked?' Menerapkan ke pengumpul…':' Tekan "Terapkan" agar pengumpul memakainya.'),'good');if($('sAuto').checked)await applyNow()}catch(e){say('sMsg',e.message,'err')}};
-async function applyNow(){say('sMsg','Menghentikan pengumpul lama…');
+  say('sMsg','Tersimpan: '+done.join(', ')+'.'+($('sAuto').checked?' Menerapkan ke pengumpul…':' Tekan "Terapkan" agar pengumpul memakainya.'),'good');if($('sAuto').checked)scheduleApply()}catch(e){say('sMsg',e.message,'err')}};
+let applyT=null,applyLeft=0;
+function scheduleApply(){clearInterval(applyT);applyLeft=45;
+ const tick=()=>{if(applyLeft<=0){clearInterval(applyT);applyNow();return}say('sMsg','Tersimpan. Diterapkan ke pengumpul dalam '+applyLeft+' dtk (menunggu Anda selesai mengisi; simpan lagi untuk mengulur, atau tekan Terapkan sekarang).','good');applyLeft--};
+ tick();applyT=setInterval(tick,1000)}
+async function applyNow(){clearInterval(applyT);say('sMsg','Menghentikan pengumpul lama…');
  try{let n=0;for(const s of ['in_progress','queued']){const j=await gh('GET','/actions/workflows/collect.yml/runs?status='+s+'&per_page=20');for(const r of j.workflow_runs||[]){try{await gh('POST','/actions/runs/'+r.id+'/cancel');n++}catch(e){}}}
   await new Promise(r=>setTimeout(r,6000));await gh('POST','/actions/workflows/collect.yml/dispatches',{ref:'main'});
   say('sMsg','Pengumpul baru dimulai ('+n+' proses lama dihentikan). Data baru muncul dalam beberapa menit.','good');setTimeout(showRuns,8000)}catch(e){say('sMsg',e.message,'err')}}
-$('sRestart').onclick=applyNow;
+$('sRestart').onclick=()=>applyNow();
 async function showRuns(){try{const j=await gh('GET','/actions/workflows/collect.yml/runs?per_page=3');$('sStatus').innerHTML='<p class="mut" style="font-size:13px;margin:6px 0">Proses terakhir: '+(j.workflow_runs||[]).map(r=>r.status+(r.conclusion?'/'+r.conclusion:'')+' ('+new Date(r.created_at).toLocaleTimeString('id-ID')+')').join(' · ')+'</p>'}catch(e){}}
 $('cLoad').onclick=async()=>{const f=$('cFile').value;say('cMsg','Memuat…');try{const j=await gh('GET','/contents/'+f+'?ref=main');st.sha=j.sha;$('cText').value=B64.dec(j.content);say('cMsg',f+' dimuat.')}catch(e){say('cMsg',e.message,'err')}};
 $('cTpl').onclick=()=>{const f=$('cFile').value;try{const o=JSON.parse($('cText').value||'{}');(TPL[f]||(()=>{throw new Error('Tidak ada contoh untuk file ini.')}))(o);$('cText').value=JSON.stringify(o,null,1);say('cMsg','Baris contoh ditambahkan: ganti isinya lalu simpan.')}catch(e){say('cMsg',e.message,'err')}};
