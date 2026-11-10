@@ -179,6 +179,9 @@ class Memory:
 def cg_prices(ids):
     import urllib.request
     url = "https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids=" + ",".join(ids[:200])
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "CryptoSastra/1.0"}), timeout=20) as r:
+    import os
+    hd = {"User-Agent": "CryptoSastra/1.0"}
+    if os.getenv("CG_API_KEY"): hd["x-cg-demo-api-key"] = os.getenv("CG_API_KEY")
+    with urllib.request.urlopen(urllib.request.Request(url, headers=hd), timeout=20) as r:
         d = json.loads(r.read())
     return {k: v.get("usd") for k, v in d.items()}

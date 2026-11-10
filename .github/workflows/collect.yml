@@ -32,6 +32,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CG_API_KEY: ${{ secrets.CG_API_KEY }}
           DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
           DUNE_QUERY_ID: ${{ secrets.DUNE_QUERY_ID }}
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}

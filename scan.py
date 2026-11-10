@@ -14,7 +14,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 UA = {"User-Agent": "Mozilla/5.0 CryptoSastra/1.0"}
 
 def _get(url, timeout=15):
-    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as r:
+    h = dict(UA)
+    if "api.coingecko.com" in url and os.getenv("CG_API_KEY"): h["x-cg-demo-api-key"] = os.getenv("CG_API_KEY")   # kunci demo gratis: batas laju lebih longgar
+    with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=timeout) as r:
         return r.read()
 
 def jget(url, timeout=15):

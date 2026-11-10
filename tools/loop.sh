@@ -43,10 +43,21 @@ publish_pages() {
   fi
 }
 
+# Berkas konfigurasi manual (diedit dari menu Pengaturan di web) disegarkan dari branch main tiap siklus, tanpa menunggu job dimulai ulang.
+CFG_FILES="unlocks.json thesis_events.json smartmoney.json catalysts.json buyback.json macro.json founders.json"
+sync_cfg() {
+  git fetch -q --depth 1 origin main 2>/dev/null || return 0
+  for f in $CFG_FILES; do
+    git show "FETCH_HEAD:$f" > .cfg.tmp 2>/dev/null && python3 -c "import json,sys;json.load(open('.cfg.tmp'))" 2>/dev/null && cp .cfg.tmp "$f"
+  done
+  rm -f .cfg.tmp
+}
+
 n=0
 while :; do
   s=$(date +%s); n=$(( n + 1 ))
   echo "=== siklus $n $(date -u +%FT%TZ)"
+  sync_cfg
   timeout "$CYCLE_TIMEOUT" $PY || echo "siklus $n gagal atau melewati batas waktu (lanjut)"
   push out-data data "data $(date -u +%FT%TZ)"
   publish_pages

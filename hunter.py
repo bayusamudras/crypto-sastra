@@ -42,6 +42,7 @@ EXCLUDE_WORDS = ("usd", "wrapped", "staked", "bridged", "restaked", "liquid stak
 
 def get(url, headers=None, timeout=20):
     h = dict(UA); h.update(headers or {})
+    if "api.coingecko.com" in url and os.getenv("CG_API_KEY"): h["x-cg-demo-api-key"] = os.getenv("CG_API_KEY")
     with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=timeout) as r:
         return r.read()
 
