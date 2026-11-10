@@ -1,11 +1,29 @@
 {
-  "_petunjuk": "Model buyback/bagi hasil yang Anda verifikasi dari dokumen resmi protokol atau sumber tepercaya. Format: {\"symbol\":\"XYZ\",\"model\":\"buyback|burn|dividend\",\"pct\":80,\"note\":\"...\",\"source\":\"URL\",\"as_of\":\"2026-04-12\"}. pct = persen pendapatan yang dikembalikan ke holder (kosongkan bila tidak diketahui). Dipakai bersama rasio pendapatan-holder otomatis dari DefiLlama.",
-  "events": [
-    {"symbol": "PENDLE", "model": "buyback", "pct": 80, "as_of": "2026-04-12", "note": "Hingga 80% pendapatan dialokasikan untuk buyback token (angka buyback tahunan di artikel tidak konsisten, verifikasi).",
-     "source": "https://www.livebitcoinnews.com/pendle-drops-85-as-revenue-slumps-buyback-shift-signals-turnaround"},
-    {"symbol": "LIT", "model": "buyback", "pct": null, "as_of": "2026-07-17", "note": "Buyback $23,0 jt USDC (Jan-Jul 2026) dan burn 15,6 jt LIT. Cliff unlock Des 2026 menambah suplai lebih cepat daripada burn.",
-     "source": "https://tokenomist.ai/research/lighter-lit-tokenomics-robinhood-hype-a-real-burn-and-the-december-2026-cliff-2"},
-    {"symbol": "CAKE", "model": "burn", "pct": null, "as_of": "2026-01-20", "note": "Hard cap 400 jt, emisi harian turun ke ≈22.250 CAKE, net burn ≈8,19% (2025).",
-     "source": "https://www.kucoin.com/news/articles/pancakeswap-tokenomics-re-upgrade-a-deep-dive-into-the-cake-max-supply-cut-to-400-million"}
-  ]
+ "_petunjuk": "Model buyback/bagi hasil yang Anda verifikasi dari dokumen resmi protokol atau sumber tepercaya. Format: {\"symbol\":\"XYZ\",\"model\":\"buyback|burn|dividend\",\"pct\":80,\"note\":\"...\",\"source\":\"URL\",\"as_of\":\"2026-04-12\"}. pct = persen pendapatan yang dikembalikan ke holder (kosongkan bila tidak diketahui). Dipakai bersama rasio pendapatan-holder otomatis dari DefiLlama.",
+ "events": [
+  {
+   "symbol": "PENDLE",
+   "model": "buyback",
+   "pct": 80,
+   "as_of": "2026-04-12",
+   "note": "Hingga 80% pendapatan dialokasikan untuk buyback token (angka buyback tahunan di artikel tidak konsisten, verifikasi).",
+   "source": "https://www.livebitcoinnews.com/pendle-drops-85-as-revenue-slumps-buyback-shift-signals-turnaround"
+  },
+  {
+   "symbol": "LIT",
+   "model": "buyback",
+   "pct": null,
+   "as_of": "2026-07-17",
+   "note": "Buyback $23,0 jt USDC (Jan-Jul 2026) dan burn 15,6 jt LIT. Cliff unlock Des 2026 menambah suplai lebih cepat daripada burn.",
+   "source": "https://tokenomist.ai/research/lighter-lit-tokenomics-robinhood-hype-a-real-burn-and-the-december-2026-cliff-2"
+  },
+  {
+   "symbol": "CAKE",
+   "model": "burn",
+   "pct": null,
+   "as_of": "2026-01-20",
+   "note": "Hard cap 400 jt, emisi harian turun ke ≈22.250 CAKE, net burn ≈8,19% (2025).",
+   "source": "https://www.kucoin.com/news/articles/pancakeswap-tokenomics-re-upgrade-a-deep-dive-into-the-cake-max-supply-cut-to-400-million"
+  }
+ ]
 }
