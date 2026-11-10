@@ -560,6 +560,31 @@ def prices_api():
     return {s: {"usd": v[0], "chg24h": v[2] if len(v) > 2 else None} for s, v in PRICES.items()}
 
 # ---------------------------------------------------------------- mode siklus tunggal (GitHub Actions)
+def _io():
+    d = os.getenv("DATA_DIR", "data"); os.makedirs(d, exist_ok=True)
+    def load(name, default):
+        try: return json.load(open(os.path.join(d, name), encoding="utf-8"))
+        except Exception: return default
+    def dump(name, obj):
+        tmp = os.path.join(d, name + ".tmp")
+        json.dump(obj, open(tmp, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+        os.replace(tmp, os.path.join(d, name))
+    return load, dump
+
+def heartbeat(load, dump, kind):
+    """live.json: bukti pengumpul masih hidup (dipakai halaman untuk indikator kesegaran)."""
+    hb = load("live.json", {}); now = int(time.time()); hb["t"] = now
+    if kind == "full": hb["full_t"] = now
+    hb["kind"] = kind; dump("live.json", hb)
+
+def fast_tick():
+    """Jalur cepat (tiap ~1 menit): hanya harga + notifikasi sinyal. Berita/Hunter penuh tetap di siklus utama."""
+    load, dump = _io()
+    if notify and _mem:
+        try: notify.fast_tick(load, dump, _mem.cg_prices)
+        except Exception as e: print("notifikasi gagal:", e)
+    heartbeat(load, dump, "fast"); print("siklus cepat selesai")
+
 def once():
     """Satu siklus: muat data sebelumnya -> kumpulkan -> nilai -> ukur hasil -> tulis JSON statis -> selesai."""
     global ONCE, BOOTSTRAP, STATS_FILE
@@ -611,6 +636,8 @@ def once():
     if notify:
         try: notify.fast_tick(load, dump, _mem.cg_prices if _mem else None)
         except Exception as e: print("notifikasi gagal:", e)
+    try: heartbeat(load, dump, "full")
+    except Exception as e: print("heartbeat gagal:", e)
     print(f"siklus selesai: {len(items)} berita, {len(PRICES)} harga, bootstrap={BOOTSTRAP}, alert_terkirim={len(ALERT_LOG)}")
 
 # ---------------------------------------------------------------- HTTP
@@ -659,6 +686,8 @@ class H(BaseHTTPRequestHandler):
             self.end_headers(); self.wfile.write(b)
 
 if __name__ == "__main__":
+    if "--fast" in sys.argv:
+        fast_tick(); sys.exit(0)
     if "--once" in sys.argv:
         once(); sys.exit(0)
     start_collectors()

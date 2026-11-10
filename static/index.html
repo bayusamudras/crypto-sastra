@@ -300,6 +300,7 @@ footer p{margin:0;max-width:78ch}
 .dl em{font:600 12px var(--f-mono);font-style:normal;color:var(--mut);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:2px 8px;white-space:nowrap}.dl em.hot{color:var(--up);border-color:var(--up)}
 .dkv{display:flex;justify-content:space-between;gap:12px;padding:7px 10px;font-size:13.5px;border-bottom:1px dashed var(--line)}.dkv span{color:var(--mut)}.dkv b{font-weight:600;text-align:right}.dkv .ok{color:var(--up)}.dkv .bad{color:var(--dn)}
 [id]{scroll-margin-top:76px}
+.freshbar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:12.5px;margin:0 0 8px}.freshbar b{color:var(--fg);font-weight:600}.freshbar .dot{width:8px;height:8px;border-radius:50%;background:var(--mut);display:inline-block;margin-right:5px}.freshbar .dot.on{background:var(--up);animation:pulse 2s infinite}.freshbar .dot.old{background:var(--dn)}.lp.up{color:var(--up)}.lp.dn{color:var(--dn)}
 </style>
 
 <header class="top">
@@ -327,7 +328,7 @@ footer p{margin:0;max-width:78ch}
 <div class="banner notice" id="notice" role="status" hidden><div class="wrap"><span id="noticeTxt"></span> <button class="btnl" id="noticeBtn" type="button">Coba lagi</button></div></div>
 <div class="banner" id="banner" hidden><div class="wrap">Mode pratinjau: semua berita di bawah adalah data contoh. Jalankan server Crypto Sastra untuk berita live dan harga nyata.</div></div>
 
-<section class="wrap" id="exec" aria-label="Papan eksekusi" style="padding-top:18px"><div class="panel" id="execBox"><h2>Papan eksekusi</h2><p class="sub">Memuat…</p></div></section>
+<section class="wrap" id="exec" aria-label="Papan eksekusi" style="padding-top:18px"><div id="fresh" class="mut freshbar" role="status" aria-live="off"></div><div class="panel" id="execBox"><h2>Papan eksekusi</h2><p class="sub">Memuat…</p></div></section>
 <section class="wrap hero" aria-label="Hunter">
   <div>
     <h1>Temukan altcoin <em>undervalue</em> sebelum ramai dibahas.</h1>
@@ -809,12 +810,39 @@ async function loadAlerts(){
     if(seen===null){store.set('cs.alertSeq',seq)}
     else if(seq>seen){(r.events||[]).filter(e=>e.id>seen).forEach(e=>{const t=`${e.type} $${e.symbol}`;toast(t+': '+e.text.slice(0,70));if(sound)beep();if(notif){try{new Notification(t,{body:e.text+(e.ticket?'\n'+e.ticket:''),tag:'cs'+e.id,requireInteraction:e.type==='ENTRY'||e.type==='STOP'})}catch(x){}}});store.set('cs.alertSeq',seq)}
     if(H.data)renderExec(H.data)}catch(e){}}
+/* ---- kesegaran data & harga live */
+const LIVE={};S.live=null;
+const secs=t=>{const d=Math.max(0,Math.floor(Date.now()/1000-t));return d<60?d+' dtk':d<3600?Math.floor(d/60)+' mnt':Math.floor(d/3600)+' jam'};
+function applyLive(){
+  const pb=(H.data||{}).playbook;if(!pb)return;
+  [...(pb.execute||[]),...(pb.waiting||[])].forEach(x=>{const L=LIVE[x.symbol];if(!L)return;
+    document.querySelectorAll('.lp[data-s="'+x.symbol+'"]').forEach(e=>{e.textContent=px0(L.p);e.className='lp '+(L.p>=x.plan.entry?'up':'dn')});
+    const chg=(L.p/x.plan.entry-1)*100,st=L.p<=x.plan.stop?'⚠ di bawah stop':L.p>=x.plan.tp2?'✓ TP2':L.p>=x.plan.tp1?'✓ TP1':'';
+    document.querySelectorAll('.lps[data-s="'+x.symbol+'"]').forEach(e=>{e.textContent='live '+(chg>=0?'+':'')+chg.toFixed(1)+'% vs harga sinyal'+(st?' · '+st:'');e.className='lps '+(st.startsWith('⚠')?'dn':'mut');e.style.fontSize='12px'})})}
+const px0=v=>v>=1?'$'+v.toFixed(3):'$'+v.toPrecision(3);
+async function liveTick(){
+  const pb=(H.data||{}).playbook;if(!pb||document.hidden||S.demo)return;
+  const its=[...(pb.execute||[]),...(pb.waiting||[])].filter(x=>x.buy&&x.buy.address&&x.buy.chain);if(!its.length)return;
+  const addrs=[...new Set(its.map(x=>x.buy.address))].slice(0,30);
+  try{const r=await fj('https://api.dexscreener.com/latest/dex/tokens/'+addrs.join(','));
+    its.forEach(x=>{const ps=(r.pairs||[]).filter(p=>p.chainId===x.buy.chain&&(p.baseToken||{}).address&&p.baseToken.address.toLowerCase()===x.buy.address.toLowerCase()&&p.priceUsd);
+      if(!ps.length)return;ps.sort((a,b)=>((b.liquidity||{}).usd||0)-((a.liquidity||{}).usd||0));LIVE[x.symbol]={p:+ps[0].priceUsd,t:Date.now()/1000}});
+    S.liveT=Date.now()/1000;applyLive()}catch(e){S.liveErr=why(e)}}
+function renderFresh(){
+  const el=$('#fresh');if(!el)return;const d=H.data||{},hb=S.live,now_=Date.now()/1000;
+  const hbAge=hb?now_-hb.t:null,cls=hbAge==null?'':hbAge<150?'on':'old';
+  el.innerHTML=`<span><i class="dot ${cls}"></i><b>${hbAge==null?'kolektor: belum ada sinyal detak':hbAge<150?'kolektor aktif':'kolektor tampak berhenti'}</b>${hbAge==null?'':' · detak '+secs(hb.t)+' lalu'}</span>`
+   +`<span>analisis Hunter <b>${d.generated_at?secs(d.generated_at)+' lalu':'-'}</b></span><span>berita <b>${S.genAt?secs(S.genAt)+' lalu':'-'}</b></span>`
+   +`<span>harga live <b>${S.liveT?secs(S.liveT)+' lalu':(S.liveErr?'gagal: '+esc(S.liveErr):'-')}</b> (tiap 10 dtk)</span><a href="#" id="freshNow" class="btnl" style="padding:2px 9px;font-size:12px">Segarkan sekarang</a>`;
+  const b=$('#freshNow');if(b)b.onclick=ev=>{ev.preventDefault();refreshAll()}}
+async function loadHeartbeat(){if(!S.static||S.demo)return;try{S.live=await fjs('data/live.json')}catch(e){}}
+async function refreshAll(){toast('Menyegarkan…');if(S.static){await refreshStatic()}await initHuntQuiet();liveTick();renderFresh()}
 function renderExec(d){
   const el=$('#execBox');if(!el)return;const pb=d.playbook;
   if(!pb){el.innerHTML='<h2>Papan eksekusi</h2><p class="sub">Belum tersedia: data Hunter versi lama atau belum dimuat. Tunggu siklus berikutnya.</p>';return}
   const px=v=>v==null?'-':v>=1?'$'+v.toFixed(3):'$'+v.toPrecision(3);
   const gate=g=>`<div class="ck ${g.ok===true?'pass':g.ok===false?'fail':'unknown'}"><b>${g.ok===true?'✓':g.ok===false?'✗':'?'}</b><div>${esc(g.gate)}<small>${esc(g.text)}</small></div></div>`;
-  const card=(x,open)=>`<details class="hc" ${open?'open':''} style="margin-bottom:10px"><summary style="display:block"><b>$${esc(x.symbol)}</b> <span class="mut">${esc(x.name)}</span> <span class="pill ${x.status==='EKSEKUSI'?'prioritas':'pantau'}">${esc(x.status)}</span> <span class="mut" style="font-size:12.5px">skor ${Math.round(x.score)} · yakin ${x.conviction==null?'-':x.conviction} · harga ${px(x.price)}${x.sector?' · '+esc(x.sector):''}</span></summary><div class="hbody">
+  const card=(x,open)=>`<details class="hc" ${open?'open':''} style="margin-bottom:10px"><summary style="display:block"><b>$${esc(x.symbol)}</b> <span class="mut">${esc(x.name)}</span> <span class="pill ${x.status==='EKSEKUSI'?'prioritas':'pantau'}">${esc(x.status)}</span> <span class="mut" style="font-size:12.5px">skor ${Math.round(x.score)} · yakin ${x.conviction==null?'-':x.conviction} · harga <span class="lp" data-s="${esc(x.symbol)}">${px(x.price)}</span> <span class="lps" data-s="${esc(x.symbol)}"></span>${x.sector?' · '+esc(x.sector):''}</span></summary><div class="hbody">
    <div><h4>Gerbang konfirmasi</h4>${x.gates.map(gate).join('')}</div>
    <div><h4>Mengapa</h4><ul>${(x.why||[]).map(w=>`<li>${esc(w)}</li>`).join('')||'<li class="mut">tidak ada catatan</li>'}</ul>${(x.risks||[]).length?`<h4 style="margin-top:12px">Risiko</h4><ul>${x.risks.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>`:''}</div>
    <div class="full"><h4>Beli &amp; tiket order</h4>${ticket(x)}</div>
@@ -827,7 +855,7 @@ function renderExec(d){
    ${pb.smart_money_active?'':'<div class="scanwait" style="margin-bottom:10px"><b>Data smart money belum aktif.</b> Tanpa konfirmasi itu tidak ada koin yang boleh berstatus EKSEKUSI. Aktifkan lewat secrets DUNE_API_KEY dan DUNE_QUERY_ID, atau isi smartmoney.json (maks 7 hari).</div>'}
    ${ex.length?ex.map((x,i)=>card(x,i===0)).join(''):`<div class="scanwait" style="margin-bottom:10px">Tidak ada koin yang lolos semua gerbang saat ini (${pb.n_checked||0} kandidat diperiksa). Itu hasil yang wajar: lebih baik tidak masuk daripada masuk tanpa konfirmasi.</div>`}
    ${wt.length?`<h3 style="margin:14px 0 8px;font-size:15px">Menunggu konfirmasi</h3>`+wt.map(x=>card(x,false)).join(''):''}${renderAlertsBox()}`;
-  const cp=$('#execCap');if(cp)cp.onchange=()=>{store.set('cs.cap',Math.max(0,+cp.value||0));renderExec(H.data)}}
+  const cp=$('#execCap');if(cp)cp.onchange=()=>{store.set('cs.cap',Math.max(0,+cp.value||0));renderExec(H.data)};applyLive()}
 function renderHunt(){
   const d=H.data;if(!d)return;
   let a=(d.candidates||[]).filter(c=>(!H.tier||c.tier===H.tier)&&(!H.quiet||!c.viral)&&(!H.hot||(c.sector&&c.sector.hot))&&(!H.rev||c.ps!=null||c.pf!=null));
@@ -872,7 +900,7 @@ document.addEventListener('click',e=>{if(e.target.id==='hRetry'){H.data=null;$('
 $('#hList').addEventListener('click',e=>{const b=e.target.closest('[data-scan]');if(b){e.preventDefault();openScan(b.dataset.scan)}});
 $('#hList').addEventListener('toggle',e=>{const d=e.target;if(d.tagName==='DETAILS'&&d.dataset.id){d.open?openH.add(d.dataset.id):openH.delete(d.dataset.id)}},true);
 setInterval(()=>{if(!S.demo)initHuntQuiet()},300000);
-async function initHuntQuiet(){try{const r=await getJSON('/api/hunt');if((r.candidates||[]).length){H.data=r;renderHunt()}}catch(e){}loadAlerts()}
+async function initHuntQuiet(){try{const r=await getJSON('/api/hunt');if((r.candidates||[]).length&&(!H.data||r.generated_at!==H.data.generated_at)){H.data=r;renderHunt();liveTick()}}catch(e){}loadAlerts()}
 
 /* ---------- interaksi ---------- */
 $$('.seg button').forEach(b=>b.onclick=()=>{S.dir=b.dataset.dir;$$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderFeed()});
@@ -939,7 +967,7 @@ async function refreshStatic(){
   try{
     const r=await fjs(STATIC_MAP['/api/news']);
     (r.items||[]).forEach(i=>{const isNew=!S.items[i.id];S.items[i.id]=i;if(isNew&&S.genAt&&i.score>=70){if(sound)beep();if(notif){try{new Notification(`[${i.score}] ${i.direction.toUpperCase()} ${i.projects.join(', ')}`,{body:i.title})}catch(e){}}}});
-    S.genAt=r.generated_at||S.genAt;footTxt(r);renderStats();renderFeed();await loadSide();checkStale(S.genAt);loadAlerts();
+    S.genAt=r.generated_at||S.genAt;footTxt(r);renderStats();renderFeed();await loadSide();checkStale(S.genAt);loadAlerts();loadHeartbeat();
   }catch(e){setNotice('Gagal menyegarkan data: '+why(e)+'. Menampilkan data terakhir yang sudah dimuat.','err',refreshStatic)}
 }
 let sideT;const sideSoon=()=>{clearTimeout(sideT);sideT=setTimeout(loadSide,1500)};
@@ -952,10 +980,10 @@ async function init(){
     S.top=calcTop(Object.values(S.items));S.pred=calcPred(Object.values(S.items));
     setLive('demo','pratinjau');$('#banner').hidden=false;$('#foot').textContent='mode pratinjau';renderAll();initScan();initHunt();return}
   if(S.demo){$('#banner').hidden=false}
-  renderAll();await loadSide();initScan();initHunt();loadAlerts();
+  renderAll();await loadSide();initScan();initHunt();loadAlerts();loadHeartbeat();
   if(S.static){
     setLive(S.demo?'demo':'on','data diperbarui berkala');
-    setInterval(refreshStatic,60000);return}
+    setInterval(()=>{if(!document.hidden)refreshStatic()},30000);setInterval(()=>{if(!document.hidden)initHuntQuiet()},60000);return}
   try{
     const es=new EventSource('/events');
     es.onopen=()=>setLive(S.demo?'demo':'on',S.demo?'live · data contoh':'live');
@@ -996,6 +1024,7 @@ $('#bMenu').onclick=()=>$('#drawer').classList.contains('open')?closeMenu():open
 $('#dClose').onclick=closeMenu;$('#dov').onclick=closeMenu;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()});
 $('#dBody').addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeMenu()});
+setInterval(renderFresh,1000);setInterval(liveTick,10000);setTimeout(liveTick,2500);
 init();
 })();
 </script>

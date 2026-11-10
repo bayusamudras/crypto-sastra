@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Pengumpul berkelanjutan untuk GitHub Actions.
-# Satu job menjalankan banyak siklus (default tiap 3 menit selama 5 jam 40 menit), lalu workflow memanggil dirinya lagi.
+# Satu job menjalankan banyak siklus (default tiap 1 menit: penuh tiap 3 menit, jalur cepat di antaranya, selama 5 jam 40 menit), lalu workflow memanggil dirinya lagi.
 # Data (JSON) didorong ke branch `data` tanpa memicu build Pages; branch `gh-pages` hanya didorong bila index.html berubah
 # atau tiap PAGES_EVERY detik (salinan cadangan), supaya tidak melewati batas build GitHub Pages (sekitar 10 per jam).
 set -u
 ROOT="$(pwd)"
 REPO_URL="${REPO_URL:-https://x-access-token:${GH_TOKEN:-}@github.com/${GITHUB_REPOSITORY:-}.git}"
 PY="${PY_CMD:-python3 server.py --once}"
-LOOP_SECONDS="${LOOP_SECONDS:-20400}"; INTERVAL="${LOOP_INTERVAL:-180}"; PAGES_EVERY="${PAGES_EVERY:-1800}"; CYCLE_TIMEOUT="${CYCLE_TIMEOUT:-420}"
+LOOP_SECONDS="${LOOP_SECONDS:-20400}"; INTERVAL="${LOOP_INTERVAL:-60}"; FULL_EVERY="${FULL_EVERY:-3}"; FAST_PY="${FAST_CMD:-python3 server.py --fast}"; PAGES_EVERY="${PAGES_EVERY:-1800}"; CYCLE_TIMEOUT="${CYCLE_TIMEOUT:-420}"
 END=$(( $(date +%s) + LOOP_SECONDS ))
 
 rm -rf out-data out-pages
@@ -59,7 +59,12 @@ while :; do
   s=$(date +%s); n=$(( n + 1 ))
   echo "=== siklus $n $(date -u +%FT%TZ)"
   sync_cfg
-  timeout "$CYCLE_TIMEOUT" $PY || echo "siklus $n gagal atau melewati batas waktu (lanjut)"
+  # siklus penuh (berita + Hunter) tiap FULL_EVERY iterasi; di antaranya jalur cepat (harga + notifikasi sinyal) tiap INTERVAL detik
+  if [ $(( (n - 1) % FULL_EVERY )) -eq 0 ]; then
+    timeout "$CYCLE_TIMEOUT" $PY || echo "siklus $n gagal atau melewati batas waktu (lanjut)"
+  else
+    timeout 120 $FAST_PY || echo "siklus cepat $n gagal (lanjut)"
+  fi
   push out-data data "data $(date -u +%FT%TZ)"
   publish_pages
   e=$(date +%s)
