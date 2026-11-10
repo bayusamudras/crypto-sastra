@@ -340,7 +340,7 @@ footer p{margin:0;max-width:78ch}
   <h2>API key &amp; rahasia</h2><p class="sub">Kolom bertanda <b>✓ terisi</b> sudah tersimpan dan tetap dipakai: biarkan kosong untuk mempertahankan, ketik nilai baru untuk mengganti. Nilai asli tidak bisa dibaca kembali dari GitHub (itu disengaja).</p>
   <div id="sFields" class="stggrid"></div>
   <label class="chk"><input type="checkbox" id="sAuto" checked> Terapkan otomatis setiap kali menyimpan (kunci langsung dipakai pengumpul dan data diperbarui)</label>
-  <div class="stgrow"><button class="btnl stgprimary" id="sSave" type="button">Simpan ke GitHub Secrets</button><button class="btnl" id="sRestart" type="button">Terapkan: mulai ulang pengumpul</button></div>
+  <div class="stgrow"><button class="btnl stgprimary" id="sSave" type="button">Simpan ke GitHub Secrets</button><button class="btnl" id="nTest" type="button">Kirim tes ntfy</button><button class="btnl" id="sRestart" type="button">Terapkan: mulai ulang pengumpul</button></div>
   <p class="stgmsg" id="sMsg" role="status"></p><div id="sStatus"></div></section>
 
  <section class="panel stgpnl" id="p3" hidden>
@@ -359,6 +359,8 @@ const $=id=>document.getElementById(id);
 const FIELDS=[['GEMINI_API_KEY','Google Gemini API key','LLM gratis (aistudio.google.com/apikey). Dipakai Master Agent, sintesis tesis, dan analisis berita.',1],
  ['GROQ_API_KEY','Groq API key','LLM cepat dengan tingkat gratis (console.groq.com).',1],['OPENROUTER_API_KEY','OpenRouter API key','Satu kunci untuk banyak model, ada model gratis (openrouter.ai/keys).',1],
  ['DEEPSEEK_API_KEY','DeepSeek API key','LLM murah (platform.deepseek.com).',1],['MISTRAL_API_KEY','Mistral API key','console.mistral.ai.',1],['OPENAI_API_KEY','OpenAI API key','platform.openai.com.',1],
+ ['NTFY_TOPIC','Topik ntfy.sh (push ke HP, gratis)','Pasang aplikasi ntfy (Android/iOS), langganan topik ini. Pilih nama panjang dan acak, siapa pun yang tahu nama topik bisa membaca notifikasinya.',0],
+ ['ALERT_WEBHOOK_URL','Webhook Discord/Slack','URL webhook untuk kirim notifikasi ke kanal Anda.',1],
  ['LLM_PROVIDER','Urutan penyedia LLM (opsional)','Pisahkan koma, contoh: groq,gemini,openrouter. Bila satu gagal atau kena batas laju, otomatis mencoba berikutnya. Kosong = gratis dulu.',0],
  ['LLM_MODELS','Model per penyedia (opsional)','Contoh: groq=llama-3.3-70b-versatile,gemini=gemini-2.5-flash. Isi bila model bawaan ditolak penyedia.',0],['ANTHROPIC_API_KEY','Anthropic API key','Penalaran LLM Master Agent dan sintesis tesis (opsional, berbayar per pemakaian).',1],
  ['CG_API_KEY','CoinGecko Demo API key','Gratis di coingecko.com/en/api. Mengatasi pengayaan detail yang hanya 2 dari 20 kandidat karena batas laju.',1],
@@ -400,6 +402,8 @@ async function gh(method,path,body){const c=cfg();
 async function listSecrets(){try{const j=await gh('GET','/actions/secrets?per_page=100');const have=new Set((j.secrets||[]).map(s=>s.name));
  SET=new Set([...have].filter(n=>FIELDS.some(f=>f[0]===n)));persistSet();markSet();return have}catch(e){return null}}
 $('gTest').onclick=async()=>{say('gMsg','Menguji…');try{const r=await gh('GET','');const h=await listSecrets();say('gMsg','Terhubung ke '+r.full_name+(h?' · '+h.size+' secret terpasang.':'. Izin Secrets belum cukup.'),'good');chip(true,r.full_name||($('gOwner').value+'/'+$('gRepo').value));if(h)setTimeout(()=>tab('p2'),700)}catch(e){say('gMsg',e.message,'err');chip(false,'belum terhubung')}};
+$('nTest').onclick=async()=>{const t=($('f_NTFY_TOPIC').value||'').trim();if(!t){say('sMsg','Isi topik ntfy dulu untuk mengirim tes.','err');return}
+ try{const r=await fetch('https://ntfy.sh/'+encodeURIComponent(t),{method:'POST',body:'Tes dari Crypto Sastra: notifikasi aktif.',headers:{Title:'Tes Crypto Sastra'}});say('sMsg',r.ok?'Tes terkirim ke ntfy. Cek HP Anda.':'ntfy menolak (HTTP '+r.status+').',r.ok?'good':'err')}catch(e){say('sMsg','Gagal menghubungi ntfy.sh.','err')}};
 $('sSave').onclick=async()=>{
  const vals=FIELDS.map(f=>[f[0],$('f_'+f[0]).value.trim()]).filter(x=>x[1]);if(!vals.length){say('sMsg','Tidak ada kolom yang diisi.','err');return}
  say('sMsg','Mengambil kunci enkripsi repo…');

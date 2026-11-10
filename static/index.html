@@ -792,6 +792,23 @@ function renderThesis(d){
    <div class="full"><p class="mut" style="margin:0;font-size:12.5px">${esc(t.caveat)}</p></div></div></details>`;
   el.innerHTML=`<h2>Tesis tema: apa yang mungkin terjadi</h2><p class="sub">Disusun dari berita radar 7 hari, momentum TVL sektor, pasokan stablecoin, dan catatan manual Anda (thesis_events.json). Keyakinan naik hanya bila ada bukti dari jenis berbeda. Ini hipotesis, bukan ramalan.</p>`
    +((th.themes||[]).length?th.themes.map(card).join(''):'<p class="mut" style="margin:0">Belum ada tema dengan bukti cukup. Tambahkan catatan di thesis_events.json atau tunggu berita/data baru.</p>')}
+function ticket(x){
+  const cap=+store.get('cs.cap',0)||0,pl=x.plan,b=x.buy||{links:[]},usd=cap?cap*pl.size_pct/100:0,qty=usd&&x.price?usd/x.price:0,risk=cap?cap*0.01:0;
+  const f=v=>v>=1000?v.toLocaleString('id-ID',{maximumFractionDigits:0}):v>=1?v.toFixed(2):v.toPrecision(3);
+  return `<p style="margin:0 0 8px;font-size:14px">${cap?`Modal $${f(cap)} → posisi <b>$${f(usd)}</b> (≈${pl.size_pct}%), ±${f(qty)} ${esc(x.symbol)}, risiko maksimum $${f(risk)} bila stop kena.`:'Isi "Modal Anda" di atas untuk menghitung ukuran posisi dalam dolar.'}</p>
+   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px">${(b.links||[]).map(l=>`<a class="btnl" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)}</a>`).join('')||'<span class="mut" style="font-size:13px">Tidak ada tautan beli (pool DEX tidak terdeteksi).</span>'}</div>
+   ${b.address?`<p class="mut" style="margin:0;font-size:12.5px;word-break:break-all">Kontrak (${esc(b.chain||'')}): ${esc(b.address)}</p>`:''}
+   <p class="mut" style="margin:4px 0 0;font-size:12.5px">${esc(b.note||'')} Pembelian dikonfirmasi sendiri di dompet/bursa Anda; sistem ini tidak mengeksekusi order.</p>`}
+function renderAlertsBox(){
+  const a=(S.alerts&&S.alerts.events)||[];if(!a.length)return '';
+  const T={ENTRY:'🟢',TP1:'💰',TP2:'💰💰',STOP:'🔴',TRAIL:'🟠',UNLOCK:'⏰',REVIEW:'🔎',TIME:'⌛',EXIT:'🚪'};
+  return `<h3 style="margin:14px 0 8px;font-size:15px">Notifikasi terbaru</h3><ul style="margin:0;padding-left:18px;font-size:13.5px">${a.slice(-6).reverse().map(e=>`<li>${T[e.type]||'•'} <b>${esc(e.type)} $${esc(e.symbol)}</b> · ${ago(e.t)}<br><span class="mut">${esc(e.text)}</span></li>`).join('')}</ul>`}
+async function loadAlerts(){
+  if(!S.static||S.demo)return;
+  try{const r=await fjs('data/alerts.json');S.alerts=r;const seq=r.seq||0;let seen=store.get('cs.alertSeq',null);
+    if(seen===null){store.set('cs.alertSeq',seq)}
+    else if(seq>seen){(r.events||[]).filter(e=>e.id>seen).forEach(e=>{const t=`${e.type} $${e.symbol}`;toast(t+': '+e.text.slice(0,70));if(sound)beep();if(notif){try{new Notification(t,{body:e.text+(e.ticket?'\n'+e.ticket:''),tag:'cs'+e.id,requireInteraction:e.type==='ENTRY'||e.type==='STOP'})}catch(x){}}});store.set('cs.alertSeq',seq)}
+    if(H.data)renderExec(H.data)}catch(e){}}
 function renderExec(d){
   const el=$('#execBox');if(!el)return;const pb=d.playbook;
   if(!pb){el.innerHTML='<h2>Papan eksekusi</h2><p class="sub">Belum tersedia: data Hunter versi lama atau belum dimuat. Tunggu siklus berikutnya.</p>';return}
@@ -800,15 +817,17 @@ function renderExec(d){
   const card=(x,open)=>`<details class="hc" ${open?'open':''} style="margin-bottom:10px"><summary style="display:block"><b>$${esc(x.symbol)}</b> <span class="mut">${esc(x.name)}</span> <span class="pill ${x.status==='EKSEKUSI'?'prioritas':'pantau'}">${esc(x.status)}</span> <span class="mut" style="font-size:12.5px">skor ${Math.round(x.score)} · yakin ${x.conviction==null?'-':x.conviction} · harga ${px(x.price)}${x.sector?' · '+esc(x.sector):''}</span></summary><div class="hbody">
    <div><h4>Gerbang konfirmasi</h4>${x.gates.map(gate).join('')}</div>
    <div><h4>Mengapa</h4><ul>${(x.why||[]).map(w=>`<li>${esc(w)}</li>`).join('')||'<li class="mut">tidak ada catatan</li>'}</ul>${(x.risks||[]).length?`<h4 style="margin-top:12px">Risiko</h4><ul>${x.risks.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>`:''}</div>
+   <div class="full"><h4>Beli &amp; tiket order</h4>${ticket(x)}</div>
    <div class="full"><h4>Kapan keluar${x.status==='EKSEKUSI'?'':' (rencana bila gerbang terpenuhi)'}</h4>
     <p style="margin:0 0 8px;font-size:14px">Entry ${px(x.plan.entry)} · stop ${px(x.plan.stop)} · TP1 ${px(x.plan.tp1)} · TP2 ${px(x.plan.tp2)}</p>
     <ul>${x.plan.rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ul><h4 style="margin-top:10px">Keluar lebih awal bila</h4><ul>${x.plan.triggers.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
     <p style="margin:8px 0 0;font-size:13.5px">${esc(x.plan.size_text)}</p></div></div></details>`;
   const ex=pb.execute||[],wt=pb.waiting||[];
-  el.innerHTML=`<h2>Papan eksekusi</h2><p class="sub">Koin lolos hanya bila SEMUA gerbang terpenuhi, termasuk konfirmasi smart money dan narasi on-chain. Level keluar adalah aturan baku, bukan level struktur pasar: cocokkan dengan Scan SMC. Bahan riset, bukan nasihat keuangan.</p>
+  el.innerHTML=`<h2>Papan eksekusi</h2><div class="stgrow" style="display:flex;gap:8px;align-items:center;margin:0 0 10px"><label class="mut" style="font-size:13.5px" for="execCap">Modal Anda ($)</label><input class="field" id="execCap" type="number" min="0" inputmode="decimal" style="width:130px" value="${+store.get('cs.cap',0)||''}" placeholder="mis. 1000"></div><p class="sub">Koin lolos hanya bila SEMUA gerbang terpenuhi, termasuk konfirmasi smart money dan narasi on-chain. Level keluar adalah aturan baku, bukan level struktur pasar: cocokkan dengan Scan SMC. Bahan riset, bukan nasihat keuangan.</p>
    ${pb.smart_money_active?'':'<div class="scanwait" style="margin-bottom:10px"><b>Data smart money belum aktif.</b> Tanpa konfirmasi itu tidak ada koin yang boleh berstatus EKSEKUSI. Aktifkan lewat secrets DUNE_API_KEY dan DUNE_QUERY_ID, atau isi smartmoney.json (maks 7 hari).</div>'}
    ${ex.length?ex.map((x,i)=>card(x,i===0)).join(''):`<div class="scanwait" style="margin-bottom:10px">Tidak ada koin yang lolos semua gerbang saat ini (${pb.n_checked||0} kandidat diperiksa). Itu hasil yang wajar: lebih baik tidak masuk daripada masuk tanpa konfirmasi.</div>`}
-   ${wt.length?`<h3 style="margin:14px 0 8px;font-size:15px">Menunggu konfirmasi</h3>`+wt.map(x=>card(x,false)).join(''):''}`}
+   ${wt.length?`<h3 style="margin:14px 0 8px;font-size:15px">Menunggu konfirmasi</h3>`+wt.map(x=>card(x,false)).join(''):''}${renderAlertsBox()}`;
+  const cp=$('#execCap');if(cp)cp.onchange=()=>{store.set('cs.cap',Math.max(0,+cp.value||0));renderExec(H.data)}}
 function renderHunt(){
   const d=H.data;if(!d)return;
   let a=(d.candidates||[]).filter(c=>(!H.tier||c.tier===H.tier)&&(!H.quiet||!c.viral)&&(!H.hot||(c.sector&&c.sector.hot))&&(!H.rev||c.ps!=null||c.pf!=null));
@@ -853,7 +872,7 @@ document.addEventListener('click',e=>{if(e.target.id==='hRetry'){H.data=null;$('
 $('#hList').addEventListener('click',e=>{const b=e.target.closest('[data-scan]');if(b){e.preventDefault();openScan(b.dataset.scan)}});
 $('#hList').addEventListener('toggle',e=>{const d=e.target;if(d.tagName==='DETAILS'&&d.dataset.id){d.open?openH.add(d.dataset.id):openH.delete(d.dataset.id)}},true);
 setInterval(()=>{if(!S.demo)initHuntQuiet()},300000);
-async function initHuntQuiet(){try{const r=await getJSON('/api/hunt');if((r.candidates||[]).length){H.data=r;renderHunt()}}catch(e){}}
+async function initHuntQuiet(){try{const r=await getJSON('/api/hunt');if((r.candidates||[]).length){H.data=r;renderHunt()}}catch(e){}loadAlerts()}
 
 /* ---------- interaksi ---------- */
 $$('.seg button').forEach(b=>b.onclick=()=>{S.dir=b.dataset.dir;$$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderFeed()});
@@ -920,7 +939,7 @@ async function refreshStatic(){
   try{
     const r=await fjs(STATIC_MAP['/api/news']);
     (r.items||[]).forEach(i=>{const isNew=!S.items[i.id];S.items[i.id]=i;if(isNew&&S.genAt&&i.score>=70){if(sound)beep();if(notif){try{new Notification(`[${i.score}] ${i.direction.toUpperCase()} ${i.projects.join(', ')}`,{body:i.title})}catch(e){}}}});
-    S.genAt=r.generated_at||S.genAt;footTxt(r);renderStats();renderFeed();await loadSide();checkStale(S.genAt);
+    S.genAt=r.generated_at||S.genAt;footTxt(r);renderStats();renderFeed();await loadSide();checkStale(S.genAt);loadAlerts();
   }catch(e){setNotice('Gagal menyegarkan data: '+why(e)+'. Menampilkan data terakhir yang sudah dimuat.','err',refreshStatic)}
 }
 let sideT;const sideSoon=()=>{clearTimeout(sideT);sideT=setTimeout(loadSide,1500)};
@@ -933,7 +952,7 @@ async function init(){
     S.top=calcTop(Object.values(S.items));S.pred=calcPred(Object.values(S.items));
     setLive('demo','pratinjau');$('#banner').hidden=false;$('#foot').textContent='mode pratinjau';renderAll();initScan();initHunt();return}
   if(S.demo){$('#banner').hidden=false}
-  renderAll();await loadSide();initScan();initHunt();
+  renderAll();await loadSide();initScan();initHunt();loadAlerts();
   if(S.static){
     setLive(S.demo?'demo':'on','data diperbarui berkala');
     setInterval(refreshStatic,60000);return}
@@ -967,6 +986,7 @@ function renderMenu(){
     <h4>Ringkasan data</h4>${KV('Diperbarui',d.generated_at?ago(d.generated_at):'-',d.generated_at&&(now()-d.generated_at)>3*3600?'bad':'')}${KV('Mode',esc(d.mode||'-'))}${KV('Koin dipindai',d.universe||0)}${KV('Lolos saringan',d.filtered||0)}${KV('Diperkaya (DEX/dev)',(d.enriched||0)+' dari 20')}${KV('Diperiksa dewan agen',ags)}${KV('Tema tesis',th.length)}${KV('Siap eksekusi / menunggu',e+' / '+(pb.waiting||[]).length)}${KV('Pilihan dievaluasi',lr.evaluated!=null?lr.evaluated:'-')}${KV('Tingkat gagal',lr.fail_rate!=null?Math.round(lr.fail_rate*100)+'%':'-')}
     <h4>Status sumber</h4>${kvS('CoinGecko',sr.coingecko)}${kvS('DefiLlama',sr.defillama)}${kvS('DexScreener',sr.dexscreener)}${KV('Reddit',rs.ok!=null?rs.ok+' ok / '+rs.fail+' gagal':'-',rs.ok?'ok':'bad')}${KV('X (Twitter)',xs.off?'mati':xs.ok!=null?xs.ok+' ok':'-',xs.off?'bad':'ok')}${KV('Smart money',pb.smart_money_active?'aktif':'tidak aktif',pb.smart_money_active?'ok':'bad')}${KV('LLM',((d.llm_status||{}).configured||[]).join(', ')||'tidak ada kunci',((d.llm_status||{}).configured||[]).length?'ok':'bad')}${Object.keys((d.llm_status||{}).errors||{}).length?KV('LLM galat',Object.entries(d.llm_status.errors).map(([k,v])=>esc(k)).join(', '),'bad'):''}${KV('Berita di radar',nNews)}
     <h4>Data mentah (JSON)</h4>${['hunt.json','memory.json','news.json','top5.json','predictions.json','stats.json','prices.json','scan/index.json'].map(f=>`<a class="dl" href="${raw(f)}" target="_blank" rel="noopener"><span>${f}</span><em>buka</em></a>`).join('')}
+    ${(S.alerts&&(S.alerts.events||[]).length)?`<h4>Notifikasi terbaru</h4>${S.alerts.events.slice(-5).reverse().map(e=>KV(esc(e.type)+' $'+esc(e.symbol),ago(e.t),e.type==='ENTRY'||e.type==='TP1'||e.type==='TP2'?'ok':'bad')).join('')}`:''}
     <h4>Tindakan</h4><a class="dl" href="#" id="dReload"><span>Muat ulang semua data</span></a>`;
   const rl=$('#dReload');if(rl)rl.onclick=ev=>{ev.preventDefault();closeMenu();if(S.static)refreshStatic();else loadSide();H.data=null;initHunt()};
 }

@@ -26,7 +26,7 @@ MC_MAX = float(os.getenv("HUNT_MC_MAX", "400e6"))
 VOL_MIN = float(os.getenv("HUNT_VOL_MIN", "300000"))
 PAGES = int(os.getenv("HUNT_PAGES", "3"))
 SCHEMA = 5     # naikkan bila format hunt.json berubah: hasil lama dengan skema berbeda dihitung ulang, bukan dipakai
-HUNT_EVERY = int(os.getenv("HUNT_EVERY_MIN", "55")) * 60
+HUNT_EVERY = int(os.getenv("HUNT_EVERY_MIN") or ("30" if os.getenv("CG_API_KEY") else "55")) * 60
 X_BEARER = os.getenv("X_BEARER_TOKEN", "")
 X_ANALYSTS = [h.strip().lstrip("@") for h in os.getenv("X_ANALYSTS", "").split(",") if h.strip()]  # akun yang Anda percaya
 UA = {"User-Agent": "Mozilla/5.0 (compatible; CryptoSastra/1.0)"}
@@ -514,7 +514,7 @@ def hunt(universe=None, protocols=None, rev=None, fees=None, trending=None, post
             "viral": s["viral"], "ghost": s["ghost"], "legacy": s["legacy"], "early": s["early"], "enriched": bool(det),
             "sector": ({"tag": sec["tag"], "tvl_ch7": sec.get("tvl_ch7"), "legacy": sec.get("legacy"), "hot": sec["tag"] in hot} if sec else None),
             "age_days": det.get("age_days"), "dev": ({"commits4w": det.get("commits4w"), "repos": det.get("repos")} if det else None),
-            "dex": ({k: dx[k] for k in ("chain", "vol24", "liq", "buys", "sells", "pairs", "address", "pool_age_days")} if dx else None),
+            "dex": ({k: dx[k] for k in ("chain", "vol24", "liq", "buys", "sells", "pairs", "address", "pool_age_days", "pool")} if dx else None),
             "scan_ref": ({"chain": dx["chain"], "pool": dx["pool"]} if dx and dx.get("pool") else None),
             "catalysts": s["catalysts"], "notes": s["notes"], "risks": s["risks"],
             "buzz": {"reddit": b.get("reddit", 0), "x": b.get("x", 0), "analyst": b.get("analyst", 0), "weight": b.get("weight", 0), "sent": b.get("sent"), "top": b.get("top", [])},

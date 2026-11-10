@@ -40,6 +40,8 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
           LLM_MODELS: ${{ secrets.LLM_MODELS }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
           CG_API_KEY: ${{ secrets.CG_API_KEY }}
           DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
           DUNE_QUERY_ID: ${{ secrets.DUNE_QUERY_ID }}

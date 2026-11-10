@@ -65,6 +65,21 @@ def exit_plan(c, now):
     plan["size_text"] = f"Risiko maksimum {RISK_PCT:.0f}% modal per posisi: dengan stop {STOP*100:.0f}% ukuran posisi ≈ {plan['size_pct']}% modal (batas {MAX_SIZE_PCT:.0f}%)."
     return plan
 
+SWAP = {"ethereum": ("Uniswap", "https://app.uniswap.org/swap?chain=mainnet&outputCurrency={a}"), "base": ("Uniswap (Base)", "https://app.uniswap.org/swap?chain=base&outputCurrency={a}"),
+        "arbitrum": ("Uniswap (Arbitrum)", "https://app.uniswap.org/swap?chain=arbitrum&outputCurrency={a}"), "optimism": ("Uniswap (Optimism)", "https://app.uniswap.org/swap?chain=optimism&outputCurrency={a}"),
+        "polygon": ("Uniswap (Polygon)", "https://app.uniswap.org/swap?chain=polygon&outputCurrency={a}"), "avalanche": ("Uniswap (Avalanche)", "https://app.uniswap.org/swap?chain=avalanche&outputCurrency={a}"),
+        "bsc": ("PancakeSwap", "https://pancakeswap.finance/swap?chain=bsc&outputCurrency={a}"), "solana": ("Jupiter", "https://jup.ag/swap/SOL-{a}")}
+
+def buy_links(c):
+    """Tautan pembuka (non-kustodian): Anda memeriksa alamat dan menekan konfirmasi sendiri di dompet/bursa. Tidak ada order otomatis."""
+    dx = c.get("dex") or {}; links = []
+    if dx.get("address") and dx.get("chain") in SWAP:
+        n, u = SWAP[dx["chain"]]; links.append({"label": n, "url": u.format(a=dx["address"])})
+    if dx.get("pool") and dx.get("chain"): links.append({"label": "DexScreener", "url": f"https://dexscreener.com/{dx['chain']}/{dx['pool']}"})
+    if c.get("id"): links.append({"label": "CoinGecko (daftar bursa)", "url": f"https://www.coingecko.com/en/coins/{c['id']}"})
+    if c.get("symbol"): links.append({"label": "Binance (bila terdaftar)", "url": f"https://www.binance.com/en/trade/{c['symbol']}_USDT?type=spot"})
+    return {"links": links, "address": dx.get("address"), "chain": dx.get("chain"), "note": "Periksa alamat kontrak di explorer sebelum membeli; tautan hanya membuka aplikasi, bukan rekomendasi bursa."}
+
 def why(c):
     r = []
     q = c.get("quant") or {}
@@ -80,7 +95,7 @@ def build(cands, thesis=None, now=None, n_exec=5, n_wait=5):
         if c.get("tier") == "lemah" and not (c.get("quant") or {}).get("elim") and c.get("score", 0) < 55: continue
         gs = gates(c); fails = [g for g in gs if g["ok"] is False]; unk = [g for g in gs if g["ok"] is None]
         item = {"symbol": c["symbol"], "name": c["name"], "id": c["id"], "price": c.get("price"), "mc": c.get("mc"), "score": c.get("score"), "tier": c.get("tier"),
-                "conviction": (c.get("conviction") or {}).get("conviction"), "gates": gs, "why": why(c), "risks": (c.get("risks") or [])[:4], "plan": exit_plan(c, now), "sector": (c.get("sector") or {}).get("tag")}
+                "conviction": (c.get("conviction") or {}).get("conviction"), "gates": gs, "why": why(c), "risks": (c.get("risks") or [])[:4], "plan": exit_plan(c, now), "buy": buy_links(c), "sector": (c.get("sector") or {}).get("tag")}
         if not fails and not unk: item["status"] = "EKSEKUSI"; ex.append(item)
         elif not fails and all(g["gate"] == "Konfirmasi smart money" for g in unk): item["status"] = "MENUNGGU SMART MONEY"; wait.append(item)
         elif len(fails) <= 1 and c.get("score", 0) >= 60: item["status"] = "MENUNGGU"; wait.append(item)

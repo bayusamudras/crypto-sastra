@@ -10,6 +10,10 @@ Jalankan:  python3 server.py   -> buka http://localhost:8000
 Mode GitHub Actions: python3 server.py --once  -> satu siklus, hasil ditulis ke DATA_DIR/*.json
 """
 import llm as llmx
+try: import notify
+except Exception: notify = None
+try: import memory as _mem
+except Exception: _mem = None
 import json, os, re, sys, time, threading, hashlib, math, queue, urllib.request, urllib.parse
 import xml.etree.ElementTree as ET
 try:
@@ -604,6 +608,9 @@ def once():
             res = hunter.run(load, dump, news=list(NEWS.values()))
             hunt_handoff(res, load, dump)
         except Exception as e: print("hunter gagal:", e)
+    if notify:
+        try: notify.fast_tick(load, dump, _mem.cg_prices if _mem else None)
+        except Exception as e: print("notifikasi gagal:", e)
     print(f"siklus selesai: {len(items)} berita, {len(PRICES)} harga, bootstrap={BOOTSTRAP}, alert_terkirim={len(ALERT_LOG)}")
 
 # ---------------------------------------------------------------- HTTP
